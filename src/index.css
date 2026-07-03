@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    @apply bg-slate-50 text-slate-900;
+  }
+  html.dark body { @apply bg-slate-950 text-slate-100; }
+  html.dark ::placeholder { color: theme('colors.slate.500'); }
+
+  /* Sidebar navigation — high-contrast, immune to global overrides */
+  .sidebar-nav-idle {
+    color: #cbd5e1;
+    border-color: transparent;
+  }
+  .sidebar-nav-idle:hover {
+    background-color: rgba(255,255,255,0.08);
+    color: #ffffff;
+  }
+  .sidebar-nav-active {
+    background-color: rgba(79,107,237,0.22);
+    color: #ffffff;
+    border-color: #4f6bed;
+    font-weight: 600;
+    box-shadow: inset 0 0 0 1px rgba(79,107,237,0.35);
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-slate-200
+           dark:bg-slate-900 dark:border-slate-800 dark:shadow-none;
+  }
+  .btn {
+    @apply inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition;
+  }
+  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700; }
+  .btn-secondary {
+    @apply btn bg-white border border-slate-300 text-slate-700 hover:bg-slate-50
+           dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700;
+  }
+  .btn-danger { @apply btn bg-rose-600 text-white hover:bg-rose-700; }
+  .input {
+    @apply w-full px-3 py-2 rounded-lg border border-slate-300 text-sm bg-white text-slate-900
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500
+           dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100
+           disabled:opacity-70;
+  }
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .th {
+    @apply text-left text-xs font-semibold uppercase tracking-wide text-slate-500 px-3 py-2
+           dark:text-slate-400;
+  }
+  .td {
+    @apply px-3 py-2 text-sm text-slate-700 dark:text-slate-300;
+  }
+}
+
+/* Global dark-mode remapping of neutral chrome utilities. */
+@layer utilities {
+  html.dark .bg-white { background-color: theme('colors.slate.900'); }
+  html.dark .bg-slate-50 { background-color: theme('colors.slate.800'); }
+  html.dark .bg-slate-100 { background-color: theme('colors.slate.800'); }
+  html.dark .hover\:bg-slate-50:hover { background-color: theme('colors.slate.800'); }
+  html.dark .hover\:bg-slate-100:hover { background-color: theme('colors.slate.700'); }
+
+  html.dark .border-slate-100 { border-color: theme('colors.slate.800'); }
+  html.dark .border-slate-200 { border-color: theme('colors.slate.800'); }
+  html.dark .border-slate-300 { border-color: theme('colors.slate.700'); }
+
+  html.dark .text-slate-400 { color: theme('colors.slate.500'); }
+  html.dark .text-slate-500 { color: theme('colors.slate.400'); }
+  html.dark .text-slate-600 { color: theme('colors.slate.400'); }
+  html.dark .text-slate-700 { color: theme('colors.slate.300'); }
+  html.dark .text-slate-800 { color: theme('colors.slate.200'); }
+  html.dark .text-slate-900 { color: theme('colors.slate.100'); }
+  html.dark .hover\:text-slate-700:hover { color: theme('colors.slate.200'); }
+  html.dark .hover\:text-slate-900:hover { color: theme('colors.slate.100'); }
+
+  html.dark .bg-brand-50 { background-color: rgba(59, 86, 209, 0.15); }
+  html.dark .bg-brand-100 { background-color: rgba(79, 107, 237, 0.25); }
+  html.dark .border-brand-200 { border-color: theme('colors.slate.700'); }
+  html.dark .text-brand-900 { color: theme('colors.brand.100'); }
+  html.dark .border-brand-300 { border-color: theme('colors.slate.600'); }
+  html.dark .hover\:bg-rose-50:hover { background-color: rgba(225, 29, 72, 0.15); }
+
+  html.dark .bg-slate-900\/40 { background-color: rgba(0,0,0,0.6); }
+
+  html.dark .recharts-cartesian-axis-tick-value,
+  html.dark .recharts-legend-item-text,
+  html.dark .recharts-polar-angle-axis-tick-value,
+  html.dark .recharts-polar-radius-axis-tick-value { fill: theme('colors.slate.400') !important; color: theme('colors.slate.300') !important; }
+  html.dark .recharts-cartesian-grid line { stroke: theme('colors.slate.800') !important; }
+  html.dark .recharts-default-tooltip { background-color: theme('colors.slate.900') !important; border-color: theme('colors.slate.700') !important; color: theme('colors.slate.100') !important; }
+
+  @keyframes slideIn {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+}
