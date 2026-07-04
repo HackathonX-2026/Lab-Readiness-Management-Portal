@@ -1,0 +1,16 @@
+{
+  "name": "cloudlabs-api-recon",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Playwright-based tool to reverse-engineer authenticated APIs used by the CloudLabs Admin portal.",
+  "scripts": {
+    "install:browsers": "playwright install chromium",
+    "capture": "node capture.mjs",
+    "analyze": "node analyze.mjs",
+    "recon": "node capture.mjs && node analyze.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.47.0"
+  }
+}
