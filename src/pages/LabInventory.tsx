@@ -317,7 +317,6 @@ export default function LabInventory() {
                   ['labName', 'Lab'],
                   ['language', 'Language'],
                   ['assignedTo', 'Assigned To'],
-                  ['testDate', 'Test Date'],
                   ['upcomingWorkshopDate', 'Workshop'],
                   ['daysGap', 'Days Gap'],
                   ['readiness', 'Readiness'],
@@ -359,20 +358,7 @@ export default function LabInventory() {
                     </td>
                     <td className="td">{lab.language}</td>
                     <td className="td">{lab.assignedTo ?? <span className="text-rose-500">Unassigned</span>}</td>
-                    <td className="td">
-                      {canEdit ? (
-                        <input
-                          type="date"
-                          value={lab.testDate ?? ''}
-                          onChange={e => {
-                            updateLab(lab.id, { testDate: e.target.value || null }, user);
-                            toast.success('Test date updated', lab.labName);
-                          }}
-                          onClick={e => e.stopPropagation()}
-                          className="bg-transparent border border-transparent hover:border-slate-300 dark:hover:border-slate-600 focus:border-brand-500 rounded px-1 py-0.5 text-sm w-32"
-                        />
-                      ) : (lab.testDate ?? '—')}
-                    </td>
+                    
                     <td className="td">{lab.upcomingWorkshopDate ?? '—'}</td>
                     <td className="td">{gap ?? '—'}</td>
                     <td className="td"><Badge className={readinessColor(rs)}>{rs}</Badge></td>
@@ -414,7 +400,7 @@ export default function LabInventory() {
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan={13} className="td text-center text-slate-500 py-10">No labs match your filters.</td></tr>
+                <tr><td colSpan={12} className="td text-center text-slate-500 py-10">No labs match your filters.</td></tr>
               )}
             </tbody>
           </table>

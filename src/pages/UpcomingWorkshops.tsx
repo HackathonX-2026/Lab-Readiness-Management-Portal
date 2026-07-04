@@ -3,6 +3,8 @@ import { useLabs } from '../state/LabsContext';
 import { daysToWorkshop, readinessColor, readinessStatus, testStatusColor } from '../lib/rules';
 import type { Lab } from '../types';
 import { Badge, PageHeader } from '../components/ui';
+import { useNotifications } from '../state/NotificationContext';
+import { useToast } from '../state/ToastContext';
 
 type View = 'list' | 'calendar';
 const BUCKETS: { label: string; days: number }[] = [
@@ -56,6 +58,10 @@ function ListView({ items }: { items: { lab: Lab; dtw: number | null }[] }) {
   if (!items.length) {
     return <div className="card p-8 text-center text-slate-500">No upcoming workshops in this window.</div>;
   }
+  const { push } = useNotifications();
+  const toast = useToast();
+  const now = new Date();
+
   return (
     <div className="card overflow-hidden">
       <table className="w-full">
@@ -66,6 +72,8 @@ function ListView({ items }: { items: { lab: Lab; dtw: number | null }[] }) {
             <th className="th">Track / Lab</th>
             <th className="th">Language</th>
             <th className="th">Assigned To</th>
+            <th className="th">Assigned</th>
+            <th className="th">Last Test</th>
             <th className="th">Test Status</th>
             <th className="th">Readiness</th>
           </tr>
@@ -73,6 +81,7 @@ function ListView({ items }: { items: { lab: Lab; dtw: number | null }[] }) {
         <tbody>
           {items.map(({ lab, dtw }) => {
             const rs = readinessStatus(lab);
+            const assignedDays = lab.assignedDate ? Math.floor((now.getTime() - new Date(lab.assignedDate).getTime()) / (1000 * 60 * 60 * 24)) : null;
             return (
               <tr key={lab.id} className="border-t border-slate-100">
                 <td className="td">
@@ -87,6 +96,24 @@ function ListView({ items }: { items: { lab: Lab; dtw: number | null }[] }) {
                 </td>
                 <td className="td">{lab.language}</td>
                 <td className="td">{lab.assignedTo ?? <span className="text-rose-500">Unassigned</span>}</td>
+                <td className="td">
+                  <div>{lab.assignedDate ?? '—'}</div>
+                  {assignedDays !== null && assignedDays >= 2 && (lab.testStatus === 'In Progress' || lab.testStatus === 'Not Started') && lab.assignedTo && (
+                    <div className="mt-1">
+                      <button
+                        className="btn-secondary text-xs"
+                        onClick={e => {
+                          e.stopPropagation();
+                          push({ type: 'assignment-reminder', labId: lab.id, message: `Reminder: ${lab.labName} was assigned to ${lab.assignedTo} ${assignedDays} days ago. Please update test status.`, channel: ['Email'] });
+                          toast.success('Reminder sent', lab.assignedTo ?? 'Tester');
+                        }}
+                      >
+                        Notify tester
+                      </button>
+                    </div>
+                  )}
+                </td>
+                <td className="td">{lab.testDate ?? '—'}</td>
                 <td className="td"><Badge className={testStatusColor(lab.testStatus)}>{lab.testStatus}</Badge></td>
                 <td className="td"><Badge className={readinessColor(rs)}>{rs}</Badge></td>
               </tr>

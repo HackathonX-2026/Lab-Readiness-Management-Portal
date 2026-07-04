@@ -59,7 +59,7 @@ export interface Lab {
 
 export interface Notification {
   id: string;
-  type: 'workshop-soon' | 'retest' | 'failed' | 'workshop-urgent';
+  type: 'workshop-soon' | 'retest' | 'failed' | 'workshop-urgent' | 'assignment-reminder';
   labId: string;
   message: string;
   channel: ('Email' | 'Teams')[];
