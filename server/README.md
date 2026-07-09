@@ -128,6 +128,39 @@ Invoke-RestMethod "http://localhost:3001/api/labs?limit=20"
 
 Logs are structured JSON on stdout — pipe to a file or log collector.
 
+## Alert Notifications
+
+The backend automatically monitors labs for those approaching their workshop dates.
+
+### Timeline Risk Dashboard (Frontend)
+
+The React app includes a **"Timeline Risk"** page (⚠️ icon in sidebar) that shows:
+- **🔴 Critical alerts**: Labs with workshop < 7 days away that are NOT yet marked Passed
+- **🟡 Medium risk**: Labs with workshop 7-14 days out, still in progress
+- **🟢 Safe**: Labs with 14+ days until workshop
+
+Managers can visit this page daily to spot bottlenecks early and reassign work as needed.
+
+### Email Alerts (Optional)
+
+Configure SMTP in `.env` to enable automatic email notifications:
+
+```env
+EMAIL_ALERTS_ENABLED=true
+SMTP_HOST=smtp.gmail.com          # or your mail server
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+ALERT_MANAGER_EMAIL=manager@company.com
+```
+
+With email alerts enabled:
+- Server checks every 30 minutes (configurable via `EMAIL_ALERT_CRON`) for labs with < 3 days until workshop
+- If a lab is not yet marked **Passed**, an alert email is sent to the configured recipients
+- Emails are rate-limited (max once per lab per 24 hours) to avoid spam
+
+**To disable email:** Leave `SMTP_HOST` blank. Alerts will still be logged to the console for debugging.
+
 ## Scheduling in production
 
 Two options:

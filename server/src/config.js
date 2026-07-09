@@ -30,5 +30,14 @@ export const config = {
   dbPath: optional('DB_PATH', './data/sync.db'),
   port: parseInt(optional('PORT', '3001'), 10),
   corsOrigins: optional('CORS_ORIGINS', 'http://localhost:5173').split(',').map(s => s.trim()).filter(Boolean),
-  logLevel: optional('LOG_LEVEL', 'info')
+  logLevel: optional('LOG_LEVEL', 'info'),
+  // Email alert settings
+  emailAlertCron: optional('EMAIL_ALERT_CRON', '*/30 * * * *'), // Every 30 minutes by default
+  emailAlertsEnabled: optional('EMAIL_ALERTS_ENABLED', 'false') === 'true',
+  smtpHost: optional('SMTP_HOST', ''),
+  smtpPort: parseInt(optional('SMTP_PORT', '587'), 10),
+  smtpSecure: optional('SMTP_SECURE', 'false') === 'true',
+  smtpUser: optional('SMTP_USER', ''),
+  smtpPass: optional('SMTP_PASS', ''),
+  smtpFrom: optional('SMTP_FROM', 'lab-readiness@cloudlabs.local')
 };
