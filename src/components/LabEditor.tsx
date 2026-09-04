@@ -138,26 +138,41 @@ export default function LabEditor({
             <input className="input" disabled={readOnly}
               value={(form.pendingItemReviewStatus as string) ?? ''} onChange={e => set('pendingItemReviewStatus', e.target.value)} />
           </Field>
-          <Field label="Cost Estimation Link" full>
-            <LinkField value={form.costEstimationLink as string} readOnly={readOnly}
-              onChange={v => set('costEstimationLink', v)} placeholder="URL or file name" />
-          </Field>
-          <Field label="Release Note Status">
-            <input className="input" disabled={readOnly}
-              value={(form.releaseNoteStatus as string) ?? ''} onChange={e => set('releaseNoteStatus', e.target.value)} />
-          </Field>
-          <Field label="PPT Status">
-            <input className="input" disabled={readOnly}
-              value={(form.pptStatus as string) ?? ''} onChange={e => set('pptStatus', e.target.value)} />
-          </Field>
-          <Field label="Release Note Link" full>
-            <LinkField value={form.releaseNoteLink as string} readOnly={readOnly}
-              onChange={v => set('releaseNoteLink', v)} placeholder="URL or PR reference" />
-          </Field>
-          <Field label="PPT Link" full>
-            <LinkField value={form.pptLink as string} readOnly={readOnly}
-              onChange={v => set('pptLink', v)} placeholder="URL or file name" />
-          </Field>
+        </div>
+
+        {/* Resources Section */}
+        <div className="mt-6 p-4 bg-brand-50 dark:bg-brand-950/20 rounded-lg border border-brand-200 dark:border-brand-800">
+          <h3 className="text-sm font-bold text-brand-900 dark:text-brand-100 mb-2 flex items-center gap-2">
+            📦 Resources & Documentation
+          </h3>
+          <p className="text-xs text-brand-700 dark:text-brand-200 mb-3 leading-relaxed">
+            Add links to important resources below. You can paste full URLs or file names. Links will appear as quick-access icons in the lab list.
+          </p>
+          <div className="grid grid-cols-1 gap-3">
+            <Field label="💰 Cost Estimation Link" full>
+              <LinkField value={form.costEstimationLink as string} readOnly={readOnly}
+                onChange={v => set('costEstimationLink', v)} placeholder="URL or SharePoint link" />
+            </Field>
+            <Field label="📝 Release Note Link" full>
+              <LinkField value={form.releaseNoteLink as string} readOnly={readOnly}
+                onChange={v => set('releaseNoteLink', v)} placeholder="GitHub URL or PR reference" />
+            </Field>
+            <Field label="📊 PPT Link" full>
+              <LinkField value={form.pptLink as string} readOnly={readOnly}
+                onChange={v => set('pptLink', v)} placeholder="SharePoint URL or file name" />
+            </Field>
+            <Field label="PPT Status">
+              <input className="input" disabled={readOnly} placeholder="e.g. Updated, Needs review"
+                value={(form.pptStatus as string) ?? ''} onChange={e => set('pptStatus', e.target.value)} />
+            </Field>
+            <Field label="Release Note Status">
+              <input className="input" disabled={readOnly} placeholder="e.g. Added, Pending"
+                value={(form.releaseNoteStatus as string) ?? ''} onChange={e => set('releaseNoteStatus', e.target.value)} />
+            </Field>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 mt-6">
           <Field label="Remarks / Reviewer Feedbacks" full>
             <textarea className="input min-h-[60px]" disabled={readOnly}
               value={(form.remarks as string) ?? ''} onChange={e => set('remarks', e.target.value)} />
@@ -200,8 +215,16 @@ function LinkField({ value, onChange, readOnly, placeholder }: {
 }) {
   const v = value ?? '';
   const isUrl = /^https?:\/\//i.test(v);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(v);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 items-center">
       <input
         className="input flex-1"
         disabled={readOnly}
@@ -209,16 +232,28 @@ function LinkField({ value, onChange, readOnly, placeholder }: {
         placeholder={placeholder}
         onChange={e => onChange(e.target.value)}
       />
-      {isUrl && (
-        <a
-          href={v}
-          target="_blank"
-          rel="noreferrer"
-          className="btn-secondary shrink-0"
-          title="Open link"
-        >
-          ↗ Open
-        </a>
+      {v && (
+        <>
+          {isUrl && (
+            <a
+              href={v}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-secondary shrink-0 text-sm"
+              title="Open link"
+            >
+              ↗ Open
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="btn-secondary shrink-0 text-sm"
+            title="Copy to clipboard"
+          >
+            {copied ? '✓ Copied' : '📋 Copy'}
+          </button>
+        </>
       )}
     </div>
   );

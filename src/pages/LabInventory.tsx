@@ -185,7 +185,7 @@ export default function LabInventory() {
     toast.success('Bulk update applied', `${count} labs updated`);
   };
 
-  const canEdit = role !== 'Manager';
+  const canEdit = role === 'Manager';
 
   const activeChips: { label: string; onClear: () => void }[] = [];
   if (readinessF !== 'All') activeChips.push({ label: `Readiness: ${readinessF}`, onClear: () => setReadinessF('All') });
@@ -326,7 +326,7 @@ export default function LabInventory() {
                     {label} {sortKey === k ? (sortDir === 'asc' ? '↑' : '↓') : ''}
                   </th>
                 ))}
-                <th className="th">Links</th>
+                <th className="th">📦 Resources</th>
                 <th className="th">Actions</th>
               </tr>
             </thead>
@@ -376,7 +376,12 @@ export default function LabInventory() {
                       )}
                     </td>
                     <td className="td whitespace-nowrap">
-                      <LinkIcons lab={lab} />
+                      <div className="flex items-center gap-2">
+                        <LinkIcons lab={lab} />
+                        {!lab.costEstimationLink && !lab.releaseNoteLink && !lab.pptLink && (
+                          <span className="text-xs text-slate-400 italic">no resources</span>
+                        )}
+                      </div>
                     </td>
                     <td className="td whitespace-nowrap">
                       <button className="text-brand-600 hover:underline text-sm mr-3" onClick={() => setEditing(lab)}>
@@ -433,28 +438,48 @@ function LinkIcons({ lab }: { lab: Lab }) {
     { key: 'ppt', label: 'PPT', icon: '📊', value: lab.pptLink }
   ];
   const shown = items
-    .map(i => ({ ...i, url: (i.value ?? '').trim() }))
-    .filter(i => /^https?:\/\//i.test(i.url));
+    .map(i => {
+      const val = (i.value ?? '').trim();
+      const isUrl = /^https?:\/\//i.test(val);
+      const hasContent = val.length > 0;
+      return { ...i, url: val, isUrl, hasContent };
+    })
+    .filter(i => i.hasContent);
 
   if (shown.length === 0) return <span className="text-slate-300 dark:text-slate-600 text-sm">—</span>;
 
   return (
     <div className="flex gap-1 flex-wrap">
-      {shown.map(i => (
-        <a
-          key={i.key}
-          href={i.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={e => e.stopPropagation()}
-          title={`${i.label} — open link`}
-          className="inline-flex items-center justify-center w-8 h-8 rounded-md text-base leading-none border transition
-                     bg-brand-50 text-brand-700 border-brand-200 hover:bg-brand-100
-                     dark:bg-brand-700/20 dark:text-brand-100 dark:border-brand-700/40 dark:hover:bg-brand-700/40"
-        >
-          {i.icon}
-        </a>
-      ))}
+      {shown.map(i => {
+        const element = i.isUrl ? (
+          <a
+            href={i.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={e => e.stopPropagation()}
+            title={`${i.label}: ${i.url}`}
+            className="inline-flex items-center justify-center w-8 h-8 rounded-md text-base leading-none border transition
+                       bg-brand-50 text-brand-700 border-brand-200 hover:bg-brand-100
+                       dark:bg-brand-700/20 dark:text-brand-100 dark:border-brand-700/40 dark:hover:bg-brand-700/40"
+          >
+            {i.icon}
+          </a>
+        ) : (
+          <div
+            title={`${i.label}: ${i.url}\n(Click to copy)`}
+            className="inline-flex items-center justify-center w-8 h-8 rounded-md text-base leading-none border cursor-pointer transition
+                       bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100
+                       dark:bg-amber-700/20 dark:text-amber-100 dark:border-amber-700/40 dark:hover:bg-amber-700/40"
+            onClick={e => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(i.url);
+            }}
+          >
+            {i.icon}
+          </div>
+        );
+        return <div key={i.key}>{element}</div>;
+      })}
     </div>
   );
 }

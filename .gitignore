@@ -9,3 +9,7 @@ dist-ssr
 
 tsconfig.tsbuildinfo
 *.tsbuildinfo
+
+# Defensive: sync-server DB accidentally created in workspace root if the
+# server is started from the wrong cwd. Real DB lives in server/data/.
+/data/
