@@ -2,16 +2,20 @@
 
 A modern, single-page web portal for tracking production labs, upcoming customer workshops, testing status, and readiness — inspired by the operational needs described in your brief.
 
-Built with **React 18 + TypeScript + Vite**, styled with **Tailwind CSS**, charts by **Recharts**, and Excel I/O via **SheetJS (xlsx)**.
+Built with **React 18 + TypeScript + Vite**, styled with **Tailwind CSS**, and charts by **Recharts**. Lab data is sourced from the CloudLabs portal through the local sync server.
 
 ## Getting started
+
+Start the backend first by following [server/README.md](server/README.md), including its `server/.env` setup. Then run the frontend:
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open http://localhost:5173. The app seeds realistic sample data on first launch and persists everything to `localStorage`. Use the **Import Excel** button in the top bar to load your own `Upcoming-Workshops-Tracker.xlsx`.
+Open http://localhost:5173. The backend syncs CloudLabs workshop requests into SQLite; the frontend reads them through `/api` and caches the latest response in `localStorage`. Use **Sync CloudLabs** in the top bar to request an immediate sync.
+
+The current Azure demo is configured for anonymous read-only access. Its production build uses `VITE_PUBLIC_ACCESS=true`; anyone with the URL can read the lab data and API responses. Do not use this mode with sensitive data. Manual sync is disabled for anonymous visitors.
 
 ## Modules
 
@@ -20,7 +24,6 @@ Open http://localhost:5173. The app seeds realistic sample data on first launch 
 3. **Upcoming Workshops** — Next 7 / 15 / 30-day windows with list *and* calendar views.
 4. **Tester Workspace** — Personalized queue for the signed-in tester with inline status/date/comment updates.
 5. **Retesting Center** — Auto-listed labs needing retest with impact scoring, days since last test, and workshop impact.
-6. **Reporting & Analytics** — Readiness %, tester performance leaderboard, language distribution, risk analysis, workshop coverage.
 
 ## Business rules implemented
 
@@ -48,14 +51,13 @@ Each notification records intended channels (**Email** ✉️ / **Teams** 💬).
 Switch roles from the top bar:
 - **Admin** — full CRUD, assignments, bulk update, delete.
 - **Tester** — updates own assigned labs (status/date/comments).
-- **Manager** — read-only dashboards, reports, retesting center.
+- **Manager** — read-only dashboard, lab inventory, workshops, and retesting center.
 
 ## Data & persistence
 
-- All state lives in `localStorage` (`lab-readiness:*` keys).
-- **Import Excel** accepts `.xlsx/.xls/.csv` and maps common column headers automatically.
-- **Export** produces an Excel file including computed *Days Gap* and *Readiness Status*.
-- **Reset** restores the seeded sample dataset.
+- CloudLabs workshop requests are the source of lab data; the Node.js sync server stores a normalized copy in SQLite.
+- The frontend reads from the sync server API and keeps a browser cache so previously loaded labs remain visible during a temporary API outage.
+- Local tester edits are browser-side overlays and are not written back to the CloudLabs portal.
 
 ## Production stack mapping
 

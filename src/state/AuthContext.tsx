@@ -6,6 +6,7 @@ import { useAudit } from './AuditContext';
 interface AuthCtx {
   currentUser: AppUser | null;
   users: AppUser[];
+  loading: boolean;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
   addUser: (input: { displayName: string; email: string; role: Role; password: string }) => Promise<{ ok: boolean; error?: string }>;
@@ -17,6 +18,17 @@ interface AuthCtx {
 const Ctx = createContext<AuthCtx | null>(null);
 const USERS_KEY = 'lab-readiness:users';
 const SESSION_KEY = 'lab-readiness:session';
+export const PUBLIC_ACCESS_ENABLED = import.meta.env.VITE_PUBLIC_ACCESS === 'true';
+export const ENTRA_AUTH_ENABLED = import.meta.env.PROD && !PUBLIC_ACCESS_ENABLED;
+const PUBLIC_VIEWER: AppUser = {
+  id: 'public-viewer',
+  displayName: 'Public Viewer',
+  email: 'public@lab-readiness.local',
+  role: 'Manager',
+  passwordHash: '',
+  createdAt: '2026-10-07T00:00:00.000Z',
+  createdBy: 'public access'
+};
 
 async function seedUsers(): Promise<AppUser[]> {
   const now = new Date().toISOString();
@@ -53,6 +65,8 @@ async function seedUsers(): Promise<AppUser[]> {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<AppUser[]>(() => {
+    if (PUBLIC_ACCESS_ENABLED) return [PUBLIC_VIEWER];
+    if (ENTRA_AUTH_ENABLED) return [];
     try {
       const raw = localStorage.getItem(USERS_KEY);
       if (raw) return JSON.parse(raw) as AppUser[];
@@ -61,6 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const [currentUser, setCurrentUser] = useState<AppUser | null>(() => {
+    if (PUBLIC_ACCESS_ENABLED) return PUBLIC_VIEWER;
+    if (ENTRA_AUTH_ENABLED) return null;
     try {
       const id = localStorage.getItem(SESSION_KEY);
       if (!id) return null;
@@ -69,11 +85,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return list.find(u => u.id === id) ?? null;
     } catch { return null; }
   });
+  const [loading, setLoading] = useState(ENTRA_AUTH_ENABLED);
 
   const { log } = useAudit();
 
+  useEffect(() => {
+    if (!ENTRA_AUTH_ENABLED) return;
+    let active = true;
+    fetch('/.auth/me', { cache: 'no-store' })
+      .then(response => response.ok ? response.json() : [])
+      .then((principals: Array<{ userId?: string; userDetails?: string; userRoles?: string[]; claims?: Array<{ typ: string; val: string }> }>) => {
+        if (!active) return;
+        const principal = principals[0];
+        if (!principal) return;
+        const claims = principal.claims ?? [];
+        const claim = (...names: string[]) => claims.find(item => names.includes(item.typ) || names.some(name => item.typ.endsWith(name)))?.val;
+        const email = principal.userDetails?.includes('@')
+          ? principal.userDetails
+          : claim('email', 'preferred_username', '/emailaddress') ?? '';
+        const displayName = claim('name', '/name') ?? principal.userDetails ?? email;
+        const roles = (principal.userRoles ?? []).map(role => role.toLowerCase());
+        const role: Role = roles.includes('admin') ? 'Admin' : roles.includes('tester') ? 'Tester' : 'Manager';
+        const user: AppUser = {
+          id: principal.userId ?? email,
+          displayName,
+          email,
+          role,
+          passwordHash: '',
+          createdAt: new Date().toISOString(),
+          createdBy: 'Microsoft Entra ID'
+        };
+        setUsers([user]);
+        setCurrentUser(user);
+      })
+      .catch(() => {
+        if (active) setCurrentUser(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
   // Seed on first run
   useEffect(() => {
+    if (ENTRA_AUTH_ENABLED || PUBLIC_ACCESS_ENABLED) return;
     if (users.length === 0) {
       seedUsers().then(seed => setUsers(seed));
     }
@@ -81,10 +137,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (ENTRA_AUTH_ENABLED || PUBLIC_ACCESS_ENABLED) return;
     localStorage.setItem(USERS_KEY, JSON.stringify(users));
   }, [users]);
 
   useEffect(() => {
+    if (ENTRA_AUTH_ENABLED || PUBLIC_ACCESS_ENABLED) return;
     if (currentUser) localStorage.setItem(SESSION_KEY, currentUser.id);
     else localStorage.removeItem(SESSION_KEY);
   }, [currentUser]);
@@ -100,7 +158,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthCtx>(() => ({
     currentUser,
     users,
+    loading,
     login: async (email, password) => {
+      if (PUBLIC_ACCESS_ENABLED) return { ok: true };
+      if (ENTRA_AUTH_ENABLED) {
+        window.location.assign('/.auth/login/aad');
+        return { ok: true };
+      }
       const u = users.find(x => x.email.toLowerCase() === email.trim().toLowerCase());
       if (!u) return { ok: false, error: 'No account with that email.' };
       if (u.disabled) return { ok: false, error: 'This account is disabled.' };
@@ -111,10 +175,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: true };
     },
     logout: () => {
+      if (PUBLIC_ACCESS_ENABLED) return;
+      if (ENTRA_AUTH_ENABLED) {
+        window.location.assign('/.auth/logout');
+        return;
+      }
       if (currentUser) log({ actor: currentUser.email, action: 'logout' });
       setCurrentUser(null);
     },
     addUser: async ({ displayName, email, role, password }) => {
+      if (ENTRA_AUTH_ENABLED || PUBLIC_ACCESS_ENABLED) return { ok: false, error: 'User management is disabled in this deployment.' };
       const normEmail = email.trim().toLowerCase();
       if (!normEmail || !password || !displayName) return { ok: false, error: 'All fields are required.' };
       if (users.some(u => u.email.toLowerCase() === normEmail)) return { ok: false, error: 'Email already exists.' };
@@ -147,7 +217,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUsers(prev => prev.filter(u => u.id !== id));
       log({ actor: currentUser?.email ?? 'system', action: 'user.delete', target: target?.email ?? id });
     }
-  }), [currentUser, users, log]);
+  }), [currentUser, users, loading, log]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

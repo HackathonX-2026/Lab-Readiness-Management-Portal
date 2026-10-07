@@ -12,8 +12,6 @@ interface LabsCtx {
   updateLab: (id: string, patch: Partial<Lab>, user: string) => void;
   deleteLab: (id: string) => void;
   bulkUpdate: (ids: string[], patch: Partial<Lab>, user: string) => void;
-  replaceAll: (labs: Lab[]) => void;
-  resetToSeed: () => void;
   refresh: () => Promise<void>;
 }
 
@@ -158,18 +156,6 @@ export function LabsProvider({ children }: { children: ReactNode }) {
         });
         setLabs(prev => prev.map(l => (ids.includes(l.id) ? { ...l, ...merged } : l)));
         log({ actor: user, action: 'lab.bulkUpdate.local', details: `${ids.length} labs · ${Object.keys(patch).join(',')}` });
-      },
-      replaceAll: next => {
-        setLabs(next);
-        log({ actor: 'system', action: 'lab.import.local', details: `${next.length} labs` });
-      },
-      // "Reset" now means: drop local overrides and re-pull fresh from CloudLabs.
-      resetToSeed: () => {
-        localEditsRef.current.clear();
-        localDeletesRef.current.clear();
-        localAddsRef.current = [];
-        void refresh();
-        log({ actor: 'system', action: 'lab.refresh.cloudlabs' });
       },
       refresh
     }),

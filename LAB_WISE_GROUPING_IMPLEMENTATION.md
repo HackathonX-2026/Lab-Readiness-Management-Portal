@@ -229,12 +229,11 @@ Both views can coexist. Users choose based on their workflow.
 
 1. **Editable Table Cells** - Click cell to edit directly (no modal)
 2. **Drag-to-Assign** - Drag lab rows onto tester name to assign
-3. **Export to Excel** - Button to export filtered table as .xlsx
-4. **Favorites** - Star labs to track frequently
-5. **Custom Sort** - Click column headers to sort by any column
-6. **Group by Track** - Add option to group by Track instead of Name
-7. **Quick Filters** - "My Assignments", "Unassigned", "At Risk"
-8. **Batch Actions** - Change status for multiple labs at once
+3. **Favorites** - Star labs to track frequently
+4. **Custom Sort** - Click column headers to sort by any column
+5. **Group by Track** - Add option to group by Track instead of Name
+6. **Quick Filters** - "My Assignments", "Unassigned", "At Risk"
+7. **Batch Actions** - Change status for multiple labs at once
 
 ---
 

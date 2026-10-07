@@ -2,9 +2,7 @@ import { NavLink, Route, Routes, Navigate, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react';
 import Dashboard from './pages/Dashboard';
 import LabInventory from './pages/LabInventory';
-import TimelineRisk from './pages/TimelineRisk';
 import UpcomingWorkshops from './pages/UpcomingWorkshops';
-import Reporting from './pages/Reporting';
 import UserManagement from './pages/UserManagement';
 import AuditLog from './pages/AuditLog';
 import LoginPage from './pages/LoginPage';
@@ -21,17 +19,15 @@ interface NavItem { to: string; label: string; icon: string; roles: Role[]; sect
 
 const NAV: NavItem[] = [
   { to: '/', label: 'Executive Dashboard', icon: '📊', roles: ['Admin', 'Manager', 'Tester'], section: 'App' },
-  { to: '/risk', label: 'Timeline Risk', icon: '⚠️', roles: ['Admin', 'Manager', 'Tester'], section: 'App' },
   { to: '/inventory', label: 'Lab Inventory', icon: '🧪', roles: ['Admin', 'Manager', 'Tester'], section: 'App' },
   { to: '/workshops', label: 'Upcoming Workshops', icon: '📅', roles: ['Admin', 'Manager', 'Tester'], section: 'App' },
-  { to: '/reports', label: 'Reporting & Analytics', icon: '📈', roles: ['Admin', 'Manager'], section: 'App' },
   { to: '/users', label: 'Users', icon: '👥', roles: ['Admin'], section: 'System' },
   { to: '/audit', label: 'Audit Log', icon: '📜', roles: ['Admin'], section: 'System' }
 ];
 
 export default function App() {
   const { role } = useRole();
-  const { currentUser } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
   const { sidebarCollapsed, toggleSidebar } = useLayout();
   const [paletteOpen, setPaletteOpen] = useState(false);
   useNotificationEngine();
@@ -47,6 +43,9 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
+  if (authLoading) {
+    return <div className="min-h-full grid place-items-center text-sm text-slate-500">Checking Microsoft sign-in…</div>;
+  }
   if (!currentUser) return <LoginPage />;
 
   const visible = NAV.filter(n => n.roles.includes(role));
@@ -127,10 +126,8 @@ export default function App() {
         <div className="flex-1 overflow-auto p-6">
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/risk" element={<TimelineRisk />} />
             <Route path="/inventory" element={<LabInventory />} />
             <Route path="/workshops" element={<UpcomingWorkshops />} />
-            <Route path="/reports" element={<Reporting />} />
             <Route path="/users" element={role === 'Admin' ? <UserManagement /> : <Navigate to="/" replace />} />
             <Route path="/audit" element={role === 'Admin' ? <AuditLog /> : <Navigate to="/" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />

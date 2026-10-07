@@ -1,0 +1,26 @@
+[
+  {
+    "allowedMemberTypes": ["User"],
+    "description": "Manage the Lab Readiness Portal.",
+    "displayName": "Admin",
+    "id": "9c944c6a-1fd9-4c4f-94c1-f0c3ab32af01",
+    "isEnabled": true,
+    "value": "Admin"
+  },
+  {
+    "allowedMemberTypes": ["User"],
+    "description": "View portfolio dashboards and manage lab readiness.",
+    "displayName": "Manager",
+    "id": "15c96c85-f82b-4472-97b5-334f35cdb201",
+    "isEnabled": true,
+    "value": "Manager"
+  },
+  {
+    "allowedMemberTypes": ["User"],
+    "description": "Update assigned lab readiness.",
+    "displayName": "Tester",
+    "id": "b65f6775-281e-43ea-8f6e-d634a024ff01",
+    "isEnabled": true,
+    "value": "Tester"
+  }
+]

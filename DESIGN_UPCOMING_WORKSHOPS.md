@@ -326,6 +326,6 @@ This design is implemented in: `src/pages/UpcomingWorkshopsConsolidated.tsx`
 To deploy:
 1. Replace `UpcomingWorkshops.tsx` with this file
 2. Remove the now-redundant "Tester Workspace" and "Retesting Center" nav items
-3. Rename sidebar: "⚠️ Timeline Risk" stays + "📅 Upcoming Workshops" (now consolidated)
+3. Keep "📅 Upcoming Workshops" as the consolidated workshop destination
 
 **Result:** From 3 pages → 1 page. Same data, 10x better UX.

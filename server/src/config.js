@@ -27,6 +27,7 @@ export const config = {
   syncOnStart: optional('SYNC_ON_START', 'true') === 'true',
   syncMaxPages: parseInt(optional('SYNC_MAX_PAGES', '200'), 10),
   syncLookbackDays: parseInt(optional('SYNC_LOOKBACK_DAYS', '20'), 10),
+  storageBackend: optional('STORAGE_BACKEND', 'sqlite'),
   dbPath: optional('DB_PATH', './data/sync.db'),
   port: parseInt(optional('PORT', '3001'), 10),
   corsOrigins: optional('CORS_ORIGINS', 'http://localhost:5173').split(',').map(s => s.trim()).filter(Boolean),

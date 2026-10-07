@@ -1,58 +1,44 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useLabs } from '../state/LabsContext';
+import { cloudlabsApi } from '../api/cloudlabs';
 import { useNotifications } from '../state/NotificationContext';
 import { useTheme } from '../state/ThemeContext';
-import { useAuth } from '../state/AuthContext';
+import { PUBLIC_ACCESS_ENABLED, useAuth } from '../state/AuthContext';
 import { useToast } from '../state/ToastContext';
-import { exportLabs, importLabs } from '../lib/excel';
 
 export default function Topbar() {
-  const { labs, replaceAll, resetToSeed } = useLabs();
+  const { refresh } = useLabs();
   const { notifications, markRead, clear } = useNotifications();
   const { theme, toggle: toggleTheme } = useTheme();
   const { currentUser, logout } = useAuth();
   const toast = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const unread = notifications.filter(n => !n.read).length;
 
-  const handleImport = async (f: File) => {
+  const handleCloudLabsSync = async () => {
+    setSyncing(true);
     try {
-      const imported = await importLabs(f);
-      if (imported.length && confirm(`Import ${imported.length} labs? This will replace current data.`)) {
-        replaceAll(imported);
-        toast.success('Import complete', `${imported.length} labs loaded from ${f.name}`);
-      }
+      const result = await cloudlabsApi.triggerSync();
+      await refresh();
+      toast.success('CloudLabs sync complete', `${result.fetched} records fetched; ${result.created} created, ${result.updated} updated.`);
     } catch (e) {
-      toast.error('Import failed', (e as Error).message);
+      toast.error('CloudLabs sync failed', (e as Error).message);
+    } finally {
+      setSyncing(false);
     }
   };
 
   return (
     <div className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6">
       <div className="flex items-center gap-3">
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".xlsx,.xls,.csv"
-          className="hidden"
-          onChange={e => {
-            const f = e.target.files?.[0];
-            if (f) handleImport(f);
-            e.target.value = '';
-          }}
-        />
-        <button className="btn-secondary" onClick={() => fileRef.current?.click()} title="Import an Excel/CSV tracker">
-          ⬆️ Import Excel
-        </button>
-        <button className="btn-secondary" onClick={() => exportLabs(labs)} title="Export all labs to Excel">
-          ⬇️ Export
-        </button>
-        <button className="btn-primary" onClick={() => confirm('Reload the 165 labs from the Upcoming-track-list sheet? Local changes will be lost.') && resetToSeed()} title="Reload real data from the shipped sheet">
-          ♻️ Load Sheet Data
-        </button>
+        {!PUBLIC_ACCESS_ENABLED && (
+          <button className="btn-primary" onClick={handleCloudLabsSync} disabled={syncing} title="Sync workshops from the CloudLabs portal">
+            {syncing ? '⟳ Syncing…' : '↻ Sync CloudLabs'}
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-3">
@@ -128,15 +114,17 @@ export default function Topbar() {
                 <div className="text-xs text-slate-500 dark:text-slate-400">{currentUser?.email}</div>
                 <div className="mt-1 text-[10px] uppercase tracking-wide font-semibold text-brand-600">{currentUser?.role}</div>
               </div>
-              <button
-                className="w-full text-left px-3 py-2 rounded-md text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 font-medium"
-                onClick={() => {
-                  setUserMenuOpen(false);
-                  if (confirm('Sign out of the portal?')) logout();
-                }}
-              >
-                🔒 Sign out
-              </button>
+              {!PUBLIC_ACCESS_ENABLED && (
+                <button
+                  className="w-full text-left px-3 py-2 rounded-md text-sm text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 font-medium"
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    if (confirm('Sign out of the portal?')) logout();
+                  }}
+                >
+                  🔒 Sign out
+                </button>
+              )}
             </div>
           )}
         </div>

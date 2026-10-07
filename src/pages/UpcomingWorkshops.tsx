@@ -47,8 +47,8 @@ export default function UpcomingWorkshopsLabWise() {
         if (!lab.upcomingWorkshopDate) return false;
         const days = daysToWorkshop(lab, now) ?? 999;
         
-        // Apply time filter (7, 15, 30 days or all)
-        if (filterDays !== 365 && days > filterDays) return false;
+        // A day window includes today through its limit, but excludes past workshops.
+        if (filterDays !== 365 && (days < 0 || days > filterDays)) return false;
         
         // Apply status filter
         if (filterStatus === 'action' && (days > 7 || lab.testStatus === 'Passed')) return false;
@@ -390,7 +390,7 @@ export default function UpcomingWorkshopsLabWise() {
                 ✕
               </button>
             </div>
-            <LabEditor lab={editing} onSave={() => setEditing(null)} />
+            <LabEditor lab={editing} onSave={() => setEditing(null)} onClose={() => setEditing(null)} />
           </div>
         </div>
       )}

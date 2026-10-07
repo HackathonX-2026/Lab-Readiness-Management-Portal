@@ -39,8 +39,7 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
       { id: 'nav-inv', label: 'Lab Inventory', icon: '🧪', section: 'Navigate', run: () => navigate('/inventory') },
       { id: 'nav-ws', label: 'Upcoming Workshops', icon: '📅', section: 'Navigate', run: () => navigate('/workshops') },
       { id: 'nav-test', label: 'Tester Workspace', icon: '🧑‍🔬', section: 'Navigate', run: () => navigate('/tester') },
-      { id: 'nav-retest', label: 'Retesting Center', icon: '🔁', section: 'Navigate', run: () => navigate('/retest') },
-      { id: 'nav-rep', label: 'Reporting & Analytics', icon: '📈', section: 'Navigate', run: () => navigate('/reports') }
+      { id: 'nav-retest', label: 'Retesting Center', icon: '🔁', section: 'Navigate', run: () => navigate('/retest') }
     ];
     if (currentUser?.role === 'Admin') {
       nav.push(

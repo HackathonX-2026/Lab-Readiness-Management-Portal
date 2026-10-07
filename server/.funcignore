@@ -1,0 +1,5 @@
+.env
+.env.*
+local.settings.json
+data/**
+node_modules/**

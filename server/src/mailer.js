@@ -111,7 +111,7 @@ export function buildOverdueLabAlertEmail(lab, daysUntilWorkshop) {
         <li>If reassigning, update the Assigned To field</li>
       </ul>
 
-      <a href="http://localhost:5173/risk" class="button">View in Portal</a>
+      <a href="http://localhost:5173/" class="button">View in Portal</a>
 
       <div class="footer">
         <p>Lab Readiness Management Portal | This is an automated alert sent because the workshop is approaching and the lab is not yet marked as Passed.</p>

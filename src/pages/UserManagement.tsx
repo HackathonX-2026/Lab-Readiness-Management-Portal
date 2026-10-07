@@ -22,6 +22,17 @@ export default function UserManagement() {
     return <EmptyState title="Access denied" hint="Only Admins can manage users." />;
   }
 
+  if (import.meta.env.PROD) {
+    return (
+      <div>
+        <PageHeader title="User Management" subtitle="Accounts and role assignments are managed in Microsoft Entra ID." />
+        <div className="card p-4 text-sm text-slate-600 dark:text-slate-300">
+          Assign the Admin, Manager, or Tester app role to users in the Lab Readiness Portal enterprise application.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader title="User Management" subtitle="Create accounts, assign roles, reset passwords.">

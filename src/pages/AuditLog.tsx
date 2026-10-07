@@ -3,7 +3,7 @@ import { useAudit } from '../state/AuditContext';
 import { useAuth } from '../state/AuthContext';
 import { EmptyState, PageHeader } from '../components/ui';
 
-const ACTIONS = ['All', 'login', 'logout', 'user.create', 'user.update', 'user.delete', 'user.resetPassword', 'lab.create', 'lab.update', 'lab.delete', 'lab.bulkUpdate', 'lab.import', 'lab.resetToSeed'];
+const ACTIONS = ['All', 'login', 'logout', 'user.create', 'user.update', 'user.delete', 'user.resetPassword', 'lab.create.local', 'lab.update.local', 'lab.delete.local', 'lab.bulkUpdate.local', 'lab.refresh.cloudlabs'];
 
 export default function AuditLog() {
   const { entries, clear } = useAudit();

@@ -132,15 +132,6 @@ Logs are structured JSON on stdout — pipe to a file or log collector.
 
 The backend automatically monitors labs for those approaching their workshop dates.
 
-### Timeline Risk Dashboard (Frontend)
-
-The React app includes a **"Timeline Risk"** page (⚠️ icon in sidebar) that shows:
-- **🔴 Critical alerts**: Labs with workshop < 7 days away that are NOT yet marked Passed
-- **🟡 Medium risk**: Labs with workshop 7-14 days out, still in progress
-- **🟢 Safe**: Labs with 14+ days until workshop
-
-Managers can visit this page daily to spot bottlenecks early and reassign work as needed.
-
 ### Email Alerts (Optional)
 
 Configure SMTP in `.env` to enable automatic email notifications:
@@ -175,14 +166,9 @@ that hits this backend. The Vite dev server proxies `/api/*` to
 `http://localhost:3001`, so the same code works in dev and prod (as long as
 prod also serves the frontend behind a reverse proxy that forwards `/api`).
 
-## Removing the Excel demo path
+## Frontend data source
 
-Once the frontend is using this backend, delete or gate the following in the
-React app so no code path ever falls back to the Excel demo:
-
-- `src/lib/seedData.ts` and `src/lib/seed.ts`
-- Any `Import Excel` button in `src/components/Topbar.tsx`
-- The `localStorage` write path in `src/state/LabsContext.tsx`
-
-The migration plan is in this repo's root workspace, section
-"Excel → CloudLabs migration" of the main README.
+The React app reads labs from this server's `/api/labs` endpoint. Its **Sync
+CloudLabs** action runs an immediate source sync and then refreshes the API
+data. The browser cache is only an outage fallback; it is not an alternate
+import source. Local tester edits are not written back to CloudLabs.

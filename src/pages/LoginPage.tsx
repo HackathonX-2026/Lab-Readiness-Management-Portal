@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { useAuth } from '../state/AuthContext';
+import { ENTRA_AUTH_ENABLED, useAuth } from '../state/AuthContext';
 import { useTheme } from '../state/ThemeContext';
 
 const DEMO_ACCOUNTS = [
@@ -29,6 +29,30 @@ export default function LoginPage() {
     setEmail(a.email);
     setPassword(a.pwd);
   };
+
+  if (ENTRA_AUTH_ENABLED) {
+    return (
+      <div className="min-h-full flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-950">
+        <div className="w-full max-w-md card p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">Lab Readiness</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400">Management Portal</div>
+            </div>
+            <button className="btn-secondary" onClick={toggle} title="Toggle theme">
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
+          </div>
+          <h1 className="text-lg font-bold mb-2 text-slate-900 dark:text-slate-100">Sign in with Microsoft</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">Use your organization account to access the portal.</p>
+          <button className="btn-primary w-full justify-center" onClick={() => void login('', '')}>
+            Continue with Microsoft
+          </button>
+          {err && <div className="mt-3 text-sm text-rose-600 dark:text-rose-400">{err}</div>}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-950">

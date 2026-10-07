@@ -1,8 +1,12 @@
 import { cloudlabs, AuthError } from './cloudlabs.js';
-import { db, upsertLab, markMissingAsDeleted, purgeOutOfWindow, insertSyncRun, finishSyncRun } from './db.js';
 import { mapWorkshopRequest } from './mapper.js';
 import { logger } from './logger.js';
 import { config } from './config.js';
+
+const storage = config.storageBackend === 'azure'
+  ? await import('./db-azure.js')
+  : await import('./db.js');
+const { upsertLab, markMissingAsDeleted, purgeOutOfWindow, insertSyncRun, finishSyncRun } = storage;
 
 let syncInFlight = false;
 
@@ -22,7 +26,7 @@ export async function runSync() {
   }
   syncInFlight = true;
 
-  const runId = insertSyncRun('workshop-requests');
+  let runId;
   const startedAt = new Date().toISOString();
   const now = startedAt;
 
@@ -35,6 +39,7 @@ export async function runSync() {
   const stats = { pages: 0, fetched: 0, kept: 0, skipped: 0, created: 0, updated: 0, deleted: 0, purged: 0 };
 
   try {
+    runId = await insertSyncRun('workshop-requests');
     logger.info('sync.start', { runId, source: 'workshop-requests', cutoffIso, lookbackDays });
 
     let pageNumber = 1;
@@ -51,21 +56,18 @@ export async function runSync() {
       stats.pages++;
       stats.fetched += items.length;
 
-      const applyPage = db.transaction((batch) => {
-        for (const raw of batch) {
-          const row = mapWorkshopRequest(raw, now);
-          // Filter by delivery_date window (keep future + past N days).
-          if (cutoffIso && (!row.delivery_date || row.delivery_date < cutoffIso)) {
-            stats.skipped++;
-            continue;
-          }
-          stats.kept++;
-          const res = upsertLab(row);
-          if (res?.change === 'created') stats.created++;
-          else if (res?.change === 'updated') stats.updated++;
+      for (const raw of items) {
+        const row = mapWorkshopRequest(raw, now);
+        // Filter by delivery_date window (keep future + past N days).
+        if (cutoffIso && (!row.delivery_date || row.delivery_date < cutoffIso)) {
+          stats.skipped++;
+          continue;
         }
-      });
-      applyPage(items);
+        stats.kept++;
+        const result = await upsertLab(row);
+        if (result?.change === 'created') stats.created++;
+        else if (result?.change === 'updated') stats.updated++;
+      }
 
       logger.debug('sync.page', { runId, pageNumber, items: items.length, totalItems });
 
@@ -74,15 +76,15 @@ export async function runSync() {
     }
 
     // In-window rows we didn't touch this run are considered removed at the source.
-    stats.deleted = markMissingAsDeleted('workshop-request', startedAt, now);
+    stats.deleted = await markMissingAsDeleted('workshop-request', startedAt, now);
 
     // Hard-purge rows that were valid previously but now fall outside the window
     // (delivery_date drifted into the past, or the window changed via .env).
     if (cutoffIso) {
-      stats.purged = purgeOutOfWindow('workshop-request', cutoffIso);
+      stats.purged = await purgeOutOfWindow('workshop-request', cutoffIso);
     }
 
-    finishSyncRun(runId, {
+    await finishSyncRun(runId, {
       status: 'success',
       pages_fetched: stats.pages,
       items_fetched: stats.fetched,
@@ -96,15 +98,17 @@ export async function runSync() {
     return { runId, ...stats, totalItems };
   } catch (err) {
     logger.error('sync.error', { runId, error: err.message, isAuth: !!err.isAuth });
-    finishSyncRun(runId, {
-      status: 'failed',
-      pages_fetched: stats.pages,
-      items_fetched: stats.fetched,
-      items_created: stats.created,
-      items_updated: stats.updated,
-      items_deleted: stats.deleted,
-      error_message: err.message
-    });
+    if (runId !== undefined) {
+      await finishSyncRun(runId, {
+        status: 'failed',
+        pages_fetched: stats.pages,
+        items_fetched: stats.fetched,
+        items_created: stats.created,
+        items_updated: stats.updated,
+        items_deleted: stats.deleted,
+        error_message: err.message
+      });
+    }
     throw err;
   } finally {
     syncInFlight = false;

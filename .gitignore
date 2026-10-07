@@ -6,6 +6,10 @@ dist-ssr
 .DS_Store
 .env.local
 .env
+server/local.settings.json
+server/data/
+server/node_modules/
+server/wwwroot/
 
 tsconfig.tsbuildinfo
 *.tsbuildinfo
