@@ -35,26 +35,26 @@ export function readinessStatus(lab: Lab): ReadinessStatus {
 export function readinessColor(status: ReadinessStatus): string {
   switch (status) {
     case 'Ready':
-      return 'bg-emerald-100 text-emerald-700';
+      return 'status-good';
     case 'Retest Required':
-      return 'bg-amber-100 text-amber-700';
+      return 'status-warn';
     case 'Testing Pending':
-      return 'bg-sky-100 text-sky-700';
+      return 'status-info';
     case 'Action Required':
-      return 'bg-rose-100 text-rose-700';
+      return 'status-bad';
   }
 }
 
 export function testStatusColor(status: Lab['testStatus']): string {
   switch (status) {
     case 'Passed':
-      return 'bg-emerald-100 text-emerald-700';
+      return 'status-good';
     case 'Failed':
-      return 'bg-rose-100 text-rose-700';
+      return 'status-bad';
     case 'In Progress':
-      return 'bg-sky-100 text-sky-700';
+      return 'status-info';
     case 'Not Started':
-      return 'bg-slate-100 text-slate-600';
+      return 'status-neutral';
   }
 }
 

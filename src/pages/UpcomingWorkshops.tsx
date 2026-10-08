@@ -14,11 +14,12 @@
  */
 
 import { useState, useMemo } from 'react';
+import { CalendarDays, CircleCheck, Clock3, RefreshCw, Search, TriangleAlert, UserCheck, UserPlus } from 'lucide-react';
 import { useLabs } from '../state/LabsContext';
 import { useRole } from '../state/RoleContext';
-import { daysToWorkshop } from '../lib/rules';
+import { daysToWorkshop, testStatusColor } from '../lib/rules';
 import type { Lab } from '../types';
-import { Badge, PageHeader } from '../components/ui';
+import { Badge, PageHeader, StatCard } from '../components/ui';
 import LabEditor from '../components/LabEditor';
 
 type FilterDays = 7 | 15 | 30 | 365; // 365 = all
@@ -30,7 +31,7 @@ interface LabRow extends Lab {
 
 export default function UpcomingWorkshopsLabWise() {
   const { labs, updateLab } = useLabs();
-  const { user, role } = useRole();
+  const { user } = useRole();
   
   const [filterDays, setFilterDays] = useState<FilterDays>(365); // Show all by default
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
@@ -103,13 +104,13 @@ export default function UpcomingWorkshopsLabWise() {
   };
 
   const getUrgencyBadge = (daysUntil: number) => {
-    if (daysUntil < 0) return { label: 'OVERDUE', bg: 'bg-slate-200 text-slate-700', color: 'text-slate-700' };
-    if (daysUntil === 0) return { label: 'TODAY', bg: 'bg-rose-200 text-rose-900', color: 'text-rose-900' };
-    if (daysUntil <= 3) return { label: '🔴 CRITICAL', bg: 'bg-rose-100 text-rose-900', color: 'text-rose-900' };
-    if (daysUntil <= 7) return { label: '🟡 THIS WEEK', bg: 'bg-amber-100 text-amber-900', color: 'text-amber-900' };
-    if (daysUntil <= 15) return { label: '🟠 2 WEEKS', bg: 'bg-orange-100 text-orange-900', color: 'text-orange-900' };
-    if (daysUntil <= 30) return { label: '🟡 30 DAYS', bg: 'bg-yellow-100 text-yellow-900', color: 'text-yellow-900' };
-    return { label: '🟢 SAFE', bg: 'bg-emerald-100 text-emerald-900', color: 'text-emerald-900' };
+    if (daysUntil < 0) return { label: 'Overdue', bg: 'status-neutral', color: 'text-muted' };
+    if (daysUntil === 0) return { label: 'Today', bg: 'status-bad', color: 'text-danger' };
+    if (daysUntil <= 3) return { label: 'Critical', bg: 'status-bad', color: 'text-danger' };
+    if (daysUntil <= 7) return { label: 'This week', bg: 'status-warn', color: 'text-warning' };
+    if (daysUntil <= 15) return { label: '2 weeks', bg: 'status-warn', color: 'text-warning' };
+    if (daysUntil <= 30) return { label: '30 days', bg: 'status-warn', color: 'text-warning' };
+    return { label: 'Safe', bg: 'status-good', color: 'text-success' };
   };
 
   const stats = {
@@ -127,7 +128,7 @@ export default function UpcomingWorkshopsLabWise() {
         subtitle={`${stats.total} labs · ${selectedLabs.size} selected`}
       >
         {selectedLabs.size > 0 && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => {
                 const assignee = prompt('Assign tester to selected labs:');
@@ -135,7 +136,7 @@ export default function UpcomingWorkshopsLabWise() {
               }}
               className="btn-primary text-sm"
             >
-              ➕ Assign Testers
+              <UserPlus size={15} aria-hidden="true" /> Assign Testers
             </button>
             <button
               onClick={() => {
@@ -144,7 +145,7 @@ export default function UpcomingWorkshopsLabWise() {
               }}
               className="btn-primary text-sm"
             >
-              ✓ Assign Reviewers
+              <UserCheck size={15} aria-hidden="true" /> Assign Reviewers
             </button>
             <button
               onClick={() => setSelectedLabs(new Set())}
@@ -157,41 +158,24 @@ export default function UpcomingWorkshopsLabWise() {
       </PageHeader>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        <div className="card p-4">
-          <p className="text-xs text-slate-600">Total Labs</p>
-          <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-slate-600">Ready (✓)</p>
-          <p className="text-2xl font-bold text-emerald-600">{stats.ready}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-slate-600">Testing (⏳)</p>
-          <p className="text-2xl font-bold text-sky-600">{stats.testing}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-slate-600">Retest (✗)</p>
-          <p className="text-2xl font-bold text-rose-600">{stats.failed}</p>
-        </div>
-        <div className="card p-4">
-          <p className="text-xs text-slate-600">Critical (≤3d)</p>
-          <p className="text-2xl font-bold text-rose-600">{stats.critical}</p>
-        </div>
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        <StatCard label="Total Labs" value={stats.total} icon={<CalendarDays />} />
+        <StatCard label="Ready" value={stats.ready} icon={<CircleCheck />} tone="good" />
+        <StatCard label="Testing" value={stats.testing} icon={<Clock3 />} tone="info" />
+        <StatCard label="Retest" value={stats.failed} icon={<RefreshCw />} tone="warn" />
+        <StatCard label="Critical (≤3d)" value={stats.critical} icon={<TriangleAlert />} tone="bad" />
       </div>
 
+      <div className="card mb-5 p-4">
       {/* Time-based Filters */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        <div className="text-sm font-semibold text-slate-700 self-center">Filter by days:</div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="mr-2 text-xs font-medium text-muted">Filter by days:</div>
         {[7, 15, 30, 365].map(days => (
           <button
             key={days}
             onClick={() => setFilterDays(days as FilterDays)}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filterDays === days
-                ? 'bg-brand-600 text-white'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
+            className="filter-button"
+            aria-pressed={filterDays === days}
           >
             {days === 365 ? 'All' : `${days}d`}
           </button>
@@ -199,44 +183,45 @@ export default function UpcomingWorkshopsLabWise() {
       </div>
 
       {/* Status-based Filters */}
-      <div className="mb-6 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap gap-2">
         {['all', 'action', 'testing', 'retesting'].map(status => (
           <button
             key={status}
             onClick={() => setFilterStatus(status as FilterStatus)}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filterStatus === status
-                ? 'bg-brand-600 text-white'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
+            className="filter-button"
+            aria-pressed={filterStatus === status}
           >
             {status === 'all' && 'All Labs'}
-            {status === 'action' && '🔴 Action Needed'}
-            {status === 'testing' && '🧪 Testing'}
-            {status === 'retesting' && '🔁 Retesting'}
+            {status === 'action' && <><TriangleAlert size={14} aria-hidden="true" /> Action Needed</>}
+            {status === 'testing' && <><Clock3 size={14} aria-hidden="true" /> Testing</>}
+            {status === 'retesting' && <><RefreshCw size={14} aria-hidden="true" /> Retesting</>}
           </button>
         ))}
       </div>
 
       {/* Search Box */}
-      <div className="mb-6">
+      <div className="relative">
+        <Search size={15} className="pointer-events-none absolute left-3 top-3 text-subtle" aria-hidden="true" />
         <input
           type="text"
-          placeholder="🔍 Search lab by name..."
+          aria-label="Search labs by name"
+          placeholder="Search lab by name..."
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          className="w-full input"
+          className="input pl-9"
         />
+      </div>
       </div>
 
       {/* Lab Table View */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
+      <div className="card overflow-x-auto">
+        <table className="w-full min-w-[1050px] border-collapse">
           <thead>
-            <tr className="bg-slate-100 border-b-2 border-slate-300">
-              <th className="p-3 text-left">
+            <tr className="border-b border-border bg-surface">
+              <th className="th">
                 <input
                   type="checkbox"
+                  aria-label="Select all workshops"
                   checked={selectedLabs.size === sortedLabRows.length && sortedLabRows.length > 0}
                   onChange={e => {
                     if (e.target.checked) {
@@ -245,18 +230,18 @@ export default function UpcomingWorkshopsLabWise() {
                       setSelectedLabs(new Set());
                     }
                   }}
-                  className="w-5 h-5"
+                  className="h-4 w-4"
                 />
               </th>
-              <th className="p-3 text-left font-bold text-slate-900">Lab Name</th>
-              <th className="p-3 text-left font-bold text-slate-900">Track</th>
-              <th className="p-3 text-left font-bold text-slate-900">Status</th>
-              <th className="p-3 text-left font-bold text-slate-900">Assigned Tester</th>
-              <th className="p-3 text-left font-bold text-slate-900">Reviewer</th>
-              <th className="p-3 text-center font-bold text-slate-900">Workshop Date</th>
-              <th className="p-3 text-center font-bold text-slate-900">Days</th>
-              <th className="p-3 text-left font-bold text-slate-900">Urgency</th>
-              <th className="p-3 text-center font-bold text-slate-900">Actions</th>
+              <th className="th">Lab Name</th>
+              <th className="th">Track</th>
+              <th className="th">Status</th>
+              <th className="th">Assigned Tester</th>
+              <th className="th">Reviewer</th>
+              <th className="th text-center">Workshop Date</th>
+              <th className="th text-center">Days</th>
+              <th className="th">Urgency</th>
+              <th className="th text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -272,14 +257,15 @@ export default function UpcomingWorkshopsLabWise() {
                 return (
                   <tr
                     key={lab.id}
-                    className={`border-b border-slate-200 hover:bg-slate-50 transition ${
-                      selectedLabs.has(lab.id) ? 'bg-blue-50' : ''
+                    className={`border-b border-border transition-colors hover:bg-surface ${
+                      selectedLabs.has(lab.id) ? 'bg-primary-soft' : ''
                     }`}
                   >
                     {/* Checkbox */}
                     <td className="p-3">
                       <input
                         type="checkbox"
+                        aria-label={`Select ${lab.labName}`}
                         checked={selectedLabs.has(lab.id)}
                         onChange={e => {
                           const newSelected = new Set(selectedLabs);
@@ -287,13 +273,13 @@ export default function UpcomingWorkshopsLabWise() {
                           else newSelected.delete(lab.id);
                           setSelectedLabs(newSelected);
                         }}
-                        className="w-5 h-5"
+                        className="h-4 w-4"
                       />
                     </td>
 
                     {/* Lab Name */}
                     <td className="p-3">
-                      <span className="font-semibold text-slate-900">{lab.labName}</span>
+                      <span className="text-sm font-medium text-foreground">{lab.labName}</span>
                     </td>
 
                     {/* Track */}
@@ -301,12 +287,7 @@ export default function UpcomingWorkshopsLabWise() {
 
                     {/* Status */}
                     <td className="p-3">
-                      <Badge className={`text-xs ${
-                        lab.testStatus === 'Passed' ? 'bg-emerald-200 text-emerald-900' :
-                        lab.testStatus === 'Failed' ? 'bg-rose-200 text-rose-900' :
-                        lab.testStatus === 'In Progress' ? 'bg-sky-200 text-sky-900' :
-                        'bg-slate-200 text-slate-900'
-                      }`}>
+                      <Badge className={testStatusColor(lab.testStatus)}>
                         {lab.testStatus}
                       </Badge>
                     </td>
@@ -314,9 +295,7 @@ export default function UpcomingWorkshopsLabWise() {
                     {/* Assigned Tester */}
                     <td className="p-3">
                       {lab.assignedTo ? (
-                        <span className="text-sm bg-blue-100 px-2 py-1 rounded text-blue-700">
-                          👤 {lab.assignedTo}
-                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted"><UserPlus size={13} className="shrink-0 text-subtle" aria-hidden="true" /> {lab.assignedTo}</span>
                       ) : (
                         <span className="text-xs text-slate-500">—</span>
                       )}
@@ -325,9 +304,7 @@ export default function UpcomingWorkshopsLabWise() {
                     {/* Reviewer */}
                     <td className="p-3">
                       {lab.reviewer ? (
-                        <span className="text-sm bg-purple-100 px-2 py-1 rounded text-purple-700">
-                          ✓ {lab.reviewer}
-                        </span>
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted"><UserCheck size={13} className="shrink-0 text-accent" aria-hidden="true" /> {lab.reviewer}</span>
                       ) : (
                         <span className="text-xs text-slate-500">—</span>
                       )}
@@ -342,29 +319,20 @@ export default function UpcomingWorkshopsLabWise() {
                     </td>
 
                     {/* Days Until */}
-                    <td className={`p-3 text-center font-bold text-lg ${
-                      lab.daysUntil < 0 ? 'text-slate-700' :
-                      lab.daysUntil <= 3 ? 'text-rose-600' :
-                      lab.daysUntil <= 7 ? 'text-amber-600' :
-                      lab.daysUntil <= 15 ? 'text-orange-600' :
-                      lab.daysUntil <= 30 ? 'text-yellow-600' :
-                      'text-emerald-600'
-                    }`}>
+                    <td className={`whitespace-nowrap p-3 text-center text-sm font-medium tabular-nums ${urgency.color}`}>
                       {lab.daysUntil < 0 ? `${Math.abs(lab.daysUntil)}d ago` : `${lab.daysUntil}d`}
                     </td>
 
                     {/* Urgency Badge */}
                     <td className="p-3">
-                      <span className={`text-xs font-bold px-2 py-1 rounded ${urgency.bg}`}>
-                        {urgency.label}
-                      </span>
+                      <Badge className={urgency.bg}>{urgency.label}</Badge>
                     </td>
 
                     {/* Actions */}
                     <td className="p-3 text-center">
                       <button
                         onClick={() => setEditing(lab)}
-                        className="px-3 py-1 text-xs bg-brand-600 text-white rounded hover:bg-brand-700 transition"
+                        className="btn-secondary px-3 py-1 text-xs"
                       >
                         Edit
                       </button>
@@ -379,20 +347,14 @@ export default function UpcomingWorkshopsLabWise() {
 
       {/* Lab Editor Modal */}
       {editing && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-200 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-slate-900">{editing.labName}</h2>
-              <button
-                onClick={() => setEditing(null)}
-                className="text-2xl text-slate-400 hover:text-slate-600"
-              >
-                ✕
-              </button>
-            </div>
-            <LabEditor lab={editing} onSave={() => setEditing(null)} />
-          </div>
-        </div>
+        <LabEditor
+          lab={editing}
+          onClose={() => setEditing(null)}
+          onSave={patch => {
+            updateLab(editing.id, patch, user);
+            setEditing(null);
+          }}
+        />
       )}
     </div>
   );

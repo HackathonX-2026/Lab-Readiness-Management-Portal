@@ -34,7 +34,109 @@ notepad .env    # fill in CLOUDLABS_ACCESS_TOKEN (see next section)
 npm start
 ```
 
-Server boots on `http://localhost:3001` and immediately kicks off a sync.
+Use **Node.js 24 or newer**. The server binds to `127.0.0.1:3001` by default.
+Workshop sync starts only when its partner ID and token are configured. Catalog
+credentials are independent; cached API reads and health work without credentials.
+
+## Reference CloudLabs catalog and audits
+
+The reference portal's **admin API** implementation is available alongside the
+existing **vNext workshop sync**. Do not interchange their credentials:
+
+| API family | Upstream host | Server configuration |
+|---|---|---|
+| Workshop request sync (existing) | `api-vnext.cloudlabs.ai` | `CLOUDLABS_PARTNER_ID`, `CLOUDLABS_ACCESS_TOKEN` |
+| Catalog, approvals, template details, test/review history (added) | `api.cloudlabs.ai` | `CLOUDLABS_TOKEN`, `CLOUDLABS_ROLEID`, `CLOUDLABS_TENANTID` |
+
+Use the blank placeholders in [.env.example](.env.example). Enter credentials
+directly in the local server environment or deployment secret store; do not paste
+them into chat, copy browser storage, or add `VITE_` token variables.
+
+### Upstream calls
+
+- `POST /api/WorkshopTemplates/GetTemplatesByFilter`
+- `POST /api/Requests/GetAllApprovals`
+- `GET /api/WorkshopTemplates/GetTemplateDataByTemplateID/{templateId}`
+- `GET /api/TemplateAudit/GetTemplateAudit?templateId={templateId}`
+
+All four are **read-only at CloudLabs**, including the POST list endpoints.
+Headers are `Authorization: Bearer …`, `roleid`, and `tenantid`. Pagination uses
+`State: "5"`, `StartIndex: 5000` (**page size**, not offset), and 1-based
+`PageCount`; approvals also send `StatusFilterId: null`. A short/empty final page
+confirms completion. Repeated pages, invalid responses, or the 10-page safety cap
+fail closed rather than publish a truncated catalog. HTTPS, a 20-second request
+timeout, and redirect rejection prevent credential forwarding.
+
+### Local routes and screens
+
+| Local route | Behavior |
+|---|---|
+| `GET /api/cloudlabs` | Current partner's cached catalog, safe connection metadata, refresh permissions |
+| `GET /api/cloudlabs/connection` | Token presence/expiry flags only; never token or role/tenant IDs |
+| `POST /api/cloudlabs` | Refresh catalog and upcoming non-cancelled approvals atomically |
+| `GET /api/cloudlabs/templates/:templateId` | Live lookup of a known template's sanitized document URL |
+| `GET /api/cloudlabs/audits/overview` | Cached per-template audit summaries |
+| `GET /api/cloudlabs/audits?templateId=…` | Cached normalized events and summary |
+| `POST /api/cloudlabs/audits` | Refresh local history for `{"templateIds":["…"]}` (1–5 known IDs) |
+
+The **CloudLabs Catalog** screen provides template search, platform/owner/status,
+document lookup, upcoming deliveries, connection status, and workshop sync history.
+**CloudLabs Audits** provides selection, batch refresh, and event-history dialogs.
+The topbar's **Sync CloudLabs** button now triggers the actual workshop-sync API
+before reloading the local cache; local edits are preserved.
+
+### Persistence and audit rules
+
+- New SQLite tables store only normalized catalog/audit records, scoped by an
+  origin/partner/role fingerprint. Token rotation preserves a partner's cache;
+  switching partner or role does not expose another connection's records.
+- Catalog fetches are single-flight. Both upstream list calls and normalization
+  must succeed before replacing the snapshot. Failures preserve the last snapshot.
+- Audit batches allow at most 3 concurrent reads, with a 60-second per-template
+  cooldown. A failed refresh retains prior events but reports current status as
+  **unknown**, not successful.
+- `StatusId=2` means completed; it does **not** imply validation passed. Explicit
+  validation, owner sign-off, freshness, and completion are independent. Unknown
+  types, future/invalid dates, or conflicting latest events fail closed.
+- Checks become stale after 24 hours. Reference freshness bands are 0–15 days
+  recent, 16–45 retest suggested, 46–60 current, 61–90 aging, over 90 needs retest.
+- Template IDs and delivery on-demand IDs are not guessed to be interchangeable.
+  Audit checks never overwrite workshop approval or local lab testing state.
+- Personal fields are redacted by default (`CLOUDLABS_INCLUDE_PII=0`) and on every
+  cached reread. Document URLs have credential query parameters removed. Raw
+  templates, audit responses, tokens, role IDs, and tenant IDs are not served.
+
+### Security and optional automation
+
+Local demo accounts are **browser-only**, not server authentication. Before
+exposing this backend, put the entire app/API behind a trusted authentication
+gateway (e.g. Entra Easy Auth), restrict network ingress, and configure CORS.
+`HOST=127.0.0.1` is the safe default; `HOST=0.0.0.0` requires that gateway.
+
+`CLOUDLABS_REFRESH_API_KEY` (or `SCAN_API_KEY`) optionally protects all operations
+that contact CloudLabs. An authenticated proxy or authorized API client must
+send `x-api-key`; the browser never receives the key. UI refresh/lookup controls
+are disabled when that header is unavailable. Cached reads still require the
+deployment's authentication boundary. CORS is not authentication.
+
+For temporary credentials set `CLOUDLABS_AUTH_SOURCE=browser-session` and
+`CLOUDLABS_TOKEN_EXPIRES_AT`. Missing/expired expiry disables new reads; a JWT
+expiry, when present, is also checked. **No automatic token renewal is claimed.**
+The reference's optional OAuth/PKCE connector depends on an approved confidential
+CloudLabs client, encrypted refresh-token storage, and trusted server-side Entra
+admin authorization. That deployment-specific connector and the reference's AI
+guide-ingestion/scanning pipeline are not enabled by this integration.
+
+Set `CLOUDLABS_CATALOG_SYNC_ENABLED=true` to refresh the catalog on `SYNC_CRON`.
+It is off by default. Audit history refresh is manual. No live credentials or
+snapshots are copied from the reference project.
+
+### Offline verification
+
+`npm test` runs synthetic CloudLabs transport, persistence, route, and audit-rule
+tests using in-memory SQLite and localhost only. It needs no CloudLabs credentials
+and does not load the local environment file. Run the frontend production build
+from the repository root separately.
 
 ## Token acquisition (⚠ read this)
 

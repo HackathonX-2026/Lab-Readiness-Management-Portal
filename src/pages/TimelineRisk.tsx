@@ -1,15 +1,16 @@
 import { useMemo } from 'react';
+import { CalendarClock, CircleCheck, TriangleAlert, User, UserCheck, type LucideIcon } from 'lucide-react';
 import { useLabs } from '../state/LabsContext';
 import { useRole } from '../state/RoleContext';
-import { daysToWorkshop } from '../lib/rules';
+import { daysToWorkshop, testStatusColor } from '../lib/rules';
 import type { Lab } from '../types';
-import { Badge, PageHeader } from '../components/ui';
+import { Badge, PageHeader, StatCard } from '../components/ui';
 import LabEditor from '../components/LabEditor';
 import { useState } from 'react';
 
 interface RiskBucket {
   label: string;
-  icon: string;
+  icon: LucideIcon;
   color: string;
   daysMin: number;
   daysMax: number;
@@ -40,9 +41,9 @@ export default function TimelineRisk() {
     });
 
     return [
-      { label: 'CRITICAL ALERT', icon: '🔴', color: 'bg-rose-50 border-rose-200', daysMin: 0, daysMax: 7, labs: critical },
-      { label: 'MEDIUM RISK', icon: '🟡', color: 'bg-amber-50 border-amber-200', daysMin: 7, daysMax: 14, labs: medium },
-      { label: 'SAFE', icon: '🟢', color: 'bg-emerald-50 border-emerald-200', daysMin: 14, daysMax: Infinity, labs: safe }
+      { label: 'Critical alert', icon: TriangleAlert, color: 'text-danger', daysMin: 0, daysMax: 7, labs: critical },
+      { label: 'Medium risk', icon: CalendarClock, color: 'text-warning', daysMin: 7, daysMax: 14, labs: medium },
+      { label: 'Safe', icon: CircleCheck, color: 'text-success', daysMin: 14, daysMax: Infinity, labs: safe }
     ];
   }, [labs]);
 
@@ -56,28 +57,20 @@ export default function TimelineRisk() {
       />
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="card p-6 border-l-4 border-rose-500">
-          <div className="text-4xl font-bold text-rose-600">{buckets[0].labs.length}</div>
-          <div className="text-sm text-slate-600 mt-1">Workshop this week</div>
-        </div>
-        <div className="card p-6 border-l-4 border-amber-500">
-          <div className="text-4xl font-bold text-amber-600">{buckets[1].labs.length}</div>
-          <div className="text-sm text-slate-600 mt-1">Within 2 weeks</div>
-        </div>
-        <div className="card p-6 border-l-4 border-emerald-500">
-          <div className="text-4xl font-bold text-emerald-600">{buckets[2].labs.length}</div>
-          <div className="text-sm text-slate-600 mt-1">Safe / 14+ days</div>
-        </div>
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <StatCard label="Workshop this week" value={buckets[0].labs.length} icon={<TriangleAlert />} tone="bad" />
+        <StatCard label="Within 2 weeks" value={buckets[1].labs.length} icon={<CalendarClock />} tone="warn" />
+        <StatCard label="Safe / 14+ days" value={buckets[2].labs.length} icon={<CircleCheck />} tone="good" />
       </div>
 
       {/* Risk Buckets */}
       <div className="space-y-4">
         {buckets.map((bucket, idx) => (
-          <div key={idx} className={`card border-2 ${bucket.color}`}>
-            <div className="p-6">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                {bucket.icon} {bucket.label} ({bucket.labs.length})
+          <div key={idx} className="card">
+            <div className="p-5">
+              <h3 className={`mb-4 flex items-center gap-2 text-sm font-medium ${bucket.color}`}>
+                <bucket.icon size={16} aria-hidden="true" /> {bucket.label}
+                <span className="badge ml-auto">{bucket.labs.length}</span>
               </h3>
 
               {bucket.labs.length === 0 ? (
@@ -91,10 +84,10 @@ export default function TimelineRisk() {
                     return (
                       <div
                         key={lab.id}
-                        className="flex items-start justify-between p-4 bg-white rounded-lg border border-slate-200 hover:border-slate-300 transition"
+                        className="flex flex-col items-start justify-between gap-4 rounded-xl border border-border bg-surface/50 p-4 transition-colors hover:border-ring sm:flex-row"
                       >
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-semibold text-slate-900 truncate">{lab.labName}</h4>
+                          <h4 className="text-sm font-medium text-foreground">{lab.labName}</h4>
                           <p className="text-sm text-slate-600 mt-1">
                             <span className="font-medium">{lab.trackName}</span>
                             {' • '}
@@ -104,29 +97,29 @@ export default function TimelineRisk() {
                             </span>
                             {' • '}
                             <span className={`font-semibold ${
-                              dtw === 0 ? 'text-rose-600' : dtw && dtw <= 3 ? 'text-amber-600' : 'text-slate-600'
+                              dtw === 0 ? 'text-danger' : dtw && dtw <= 3 ? 'text-warning' : 'text-muted'
                             }`}>
                               {daysText}
                             </span>
                           </p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge>{lab.testStatus}</Badge>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <Badge className={testStatusColor(lab.testStatus)}>{lab.testStatus}</Badge>
                             {lab.priority && <Badge className="text-xs">{lab.priority}</Badge>}
                             {lab.assignedTo && (
-                              <span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-600">
-                                👤 {lab.assignedTo}
+                              <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+                                <User size={12} aria-hidden="true" /> {lab.assignedTo}
                               </span>
                             )}
                             {lab.reviewer && (
-                              <span className="text-xs bg-blue-100 px-2 py-1 rounded text-blue-600">
-                                ✓ {lab.reviewer}
+                              <span className="inline-flex items-center gap-1.5 text-xs text-accent">
+                                <UserCheck size={12} aria-hidden="true" /> {lab.reviewer}
                               </span>
                             )}
                           </div>
                         </div>
                         <button
                           onClick={() => setEditing(lab)}
-                          className="shrink-0 ml-4 px-3 py-2 text-sm font-medium bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition"
+                          className="btn-secondary"
                         >
                           View / Edit
                         </button>

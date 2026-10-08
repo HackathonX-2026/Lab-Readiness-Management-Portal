@@ -7,9 +7,11 @@ const Ctx = createContext<ThemeCtx | null>(null);
 const KEY = 'lab-readiness:theme';
 
 function initial(): Theme {
-  const stored = localStorage.getItem(KEY);
-  if (stored === 'light' || stored === 'dark') return stored;
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  try {
+    const stored = localStorage.getItem(KEY);
+    if (stored === 'light' || stored === 'dark') return stored;
+  } catch { /* Storage can be unavailable in restricted browser contexts. */ }
+  return 'dark';
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -19,7 +21,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     root.classList.toggle('dark', theme === 'dark');
     root.style.colorScheme = theme;
-    localStorage.setItem(KEY, theme);
+    try { localStorage.setItem(KEY, theme); } catch { /* Keep the in-memory preference. */ }
   }, [theme]);
 
   return (

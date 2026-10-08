@@ -31,7 +31,7 @@ export default function RetestingCenter() {
       {items.length === 0 ? (
         <EmptyState title="All labs are on track!" hint="No retests or failed labs at the moment." />
       ) : (
-        <div className="card overflow-hidden">
+        <div className="card overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50">
               <tr>
@@ -58,9 +58,9 @@ export default function RetestingCenter() {
                   <tr key={lab.id} className="border-t border-slate-100">
                     <td className="td">
                       <span className={`badge ${
-                        impact === 'Critical' ? 'bg-rose-100 text-rose-700' :
-                        impact === 'High' ? 'bg-amber-100 text-amber-700' :
-                        impact === 'Medium' ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-600'
+                        impact === 'Critical' ? 'status-bad' :
+                        impact === 'High' ? 'status-warn' :
+                        impact === 'Medium' ? 'status-info' : 'status-neutral'
                       }`}>{impact}</span>
                     </td>
                     <td className="td">

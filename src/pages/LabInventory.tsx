@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { CircleDollarSign, FileText, FolderOpen, Plus, Presentation, Star, TriangleAlert, X, type LucideIcon } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useLabs } from '../state/LabsContext';
 import { useRole } from '../state/RoleContext';
@@ -18,12 +19,10 @@ const PRIORITY_FILTERS: (Priority | 'All')[] = ['All', 'P0', 'P1', 'P2', 'P3', '
 
 function priorityColor(p: Priority | undefined | null): string {
   switch (p) {
-    case 'P0': return 'bg-rose-100 text-rose-700';
-    case 'P1': return 'bg-amber-100 text-amber-700';
-    case 'P2': return 'bg-sky-100 text-sky-700';
-    case 'P3': return 'bg-slate-100 text-slate-600';
-    case 'P4': return 'bg-slate-100 text-slate-500';
-    default: return 'bg-slate-100 text-slate-400';
+    case 'P0': return 'status-bad';
+    case 'P1': return 'status-warn';
+    case 'P2': return 'status-info';
+    default: return 'status-neutral';
   }
 }
 
@@ -206,10 +205,10 @@ export default function LabInventory() {
     <div>
       <PageHeader title="Lab Inventory" subtitle={`${filtered.length} of ${labs.length} labs`}>
         <button className="btn-secondary" onClick={saveCurrentView} title="Save current filters as a view">
-          ⭐ Save view
+          <Star size={15} aria-hidden="true" /> Save view
         </button>
         {canEdit && (
-          <button className="btn-primary" onClick={() => setEditing('new')}>➕ Add Lab</button>
+          <button className="btn-primary" onClick={() => setEditing('new')}><Plus size={15} aria-hidden="true" /> Add Lab</button>
         )}
       </PageHeader>
 
@@ -217,22 +216,22 @@ export default function LabInventory() {
         <div className="mb-4 flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1">Saved views:</span>
           {savedViews.map(v => (
-            <div key={v.id} className="inline-flex items-center rounded-full text-xs font-medium border overflow-hidden
-                                        border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <div key={v.id} className="inline-flex items-center overflow-hidden rounded-lg border border-border bg-card text-xs font-medium">
               <button
                 type="button"
                 onClick={() => applyView(v)}
-                className="px-3 py-1 hover:bg-brand-50 dark:hover:bg-brand-700/25 text-slate-700 dark:text-slate-200"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-muted hover:bg-primary-soft hover:text-accent"
               >
-                ⭐ {v.name}
+                <Star size={12} aria-hidden="true" /> {v.name}
               </button>
               <button
                 type="button"
                 onClick={() => deleteView(v.id)}
                 title="Delete view"
-                className="px-2 py-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 border-l border-slate-200 dark:border-slate-700"
+                aria-label={`Delete view ${v.name}`}
+                className="border-l border-border px-2 py-1.5 text-subtle hover:bg-danger/10 hover:text-danger"
               >
-                ✕
+                <X size={12} aria-hidden="true" />
               </button>
             </div>
           ))}
@@ -240,16 +239,16 @@ export default function LabInventory() {
       )}
 
       {activeChips.length > 0 && (
-        <div className="card p-3 mb-4 flex flex-wrap items-center gap-2 bg-brand-50 border-brand-200">
-          <span className="text-xs font-semibold text-brand-900 mr-1">Filters:</span>
+        <div className="card mb-4 flex flex-wrap items-center gap-2 border-primary/25 bg-primary-soft p-3">
+          <span className="mr-1 text-xs font-medium text-accent">Filters:</span>
           {activeChips.map(c => (
             <button
               key={c.label}
               onClick={() => { c.onClear(); clearUrl(); }}
-              className="badge bg-white border border-brand-300 text-brand-900 hover:bg-rose-50 hover:border-rose-300"
+              className="badge status-primary hover:border-danger/30 hover:bg-danger/10"
               title="Clear this filter"
             >
-              {c.label} ✕
+              {c.label} <X size={11} aria-hidden="true" />
             </button>
           ))}
           <button className="text-xs text-rose-600 hover:underline ml-auto" onClick={clearAllFilters}>
@@ -259,26 +258,27 @@ export default function LabInventory() {
       )}
 
       <div className="card p-4 mb-4">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
           <input
-            className="input md:col-span-2"
+            className="input sm:col-span-2"
+            aria-label="Search inventory"
             placeholder="Search track, lab, tester, comments..."
             value={q}
             onChange={e => setQ(e.target.value)}
           />
-          <select className="input" value={readinessF} onChange={e => setReadinessF(e.target.value as any)}>
+          <select aria-label="Readiness filter" className="input" value={readinessF} onChange={e => setReadinessF(e.target.value as any)}>
             {READINESS_FILTERS.map(r => <option key={r}>{r === 'All' ? 'All Readiness' : r}</option>)}
           </select>
-          <select className="input" value={testF} onChange={e => setTestF(e.target.value as any)}>
+          <select aria-label="Test status filter" className="input" value={testF} onChange={e => setTestF(e.target.value as any)}>
             {TEST_FILTERS.map(r => <option key={r}>{r === 'All' ? 'All Test Statuses' : r}</option>)}
           </select>
-          <select className="input" value={trackF} onChange={e => setTrackF(e.target.value)}>
+          <select aria-label="Track filter" className="input" value={trackF} onChange={e => setTrackF(e.target.value)}>
             {tracks.map(t => <option key={t}>{t}</option>)}
           </select>
-          <select className="input" value={languageF} onChange={e => setLanguageF(e.target.value)}>
+          <select aria-label="Language filter" className="input" value={languageF} onChange={e => setLanguageF(e.target.value)}>
             {languages.map(l => <option key={l}>{l}</option>)}
           </select>
-          <select className="input" value={priorityF ?? 'All'} onChange={e => setPriorityF(e.target.value as any)}>
+          <select aria-label="Priority filter" className="input" value={priorityF ?? 'All'} onChange={e => setPriorityF(e.target.value as any)}>
             {PRIORITY_FILTERS.map(p => <option key={p ?? 'all'} value={p ?? 'All'}>{p === 'All' ? 'All Priorities' : p}</option>)}
           </select>
         </div>
@@ -289,8 +289,8 @@ export default function LabInventory() {
       </div>
 
       {canEdit && selected.size > 0 && (
-        <div className="card p-3 mb-4 flex flex-wrap items-center gap-3 bg-brand-50 border-brand-200">
-          <div className="text-sm font-semibold text-brand-900">Bulk update ({selected.size} selected):</div>
+        <div className="card mb-4 flex flex-wrap items-center gap-3 border-primary/25 bg-primary-soft p-3">
+          <div className="text-sm font-medium text-accent">Bulk update ({selected.size} selected):</div>
           <select className="input w-40" value={bulkStatus} onChange={e => setBulkStatus(e.target.value as TestStatus)}>
             <option value="">Set test status...</option>
             <option>Passed</option><option>Failed</option><option>In Progress</option><option>Not Started</option>
@@ -326,7 +326,7 @@ export default function LabInventory() {
                     {label} {sortKey === k ? (sortDir === 'asc' ? '↑' : '↓') : ''}
                   </th>
                 ))}
-                <th className="th">📦 Resources</th>
+                <th className="th"><span className="inline-flex items-center gap-1.5"><FolderOpen size={13} aria-hidden="true" /> Resources</span></th>
                 <th className="th">Actions</th>
               </tr>
             </thead>
@@ -354,7 +354,7 @@ export default function LabInventory() {
                     <td className="td font-medium text-slate-800">{lab.trackName}</td>
                     <td className="td">
                       {lab.labName}
-                      {risk && <span className="ml-2 badge bg-rose-100 text-rose-700">⚠️ Risk</span>}
+                      {risk && <span className="badge status-bad ml-2"><TriangleAlert size={11} aria-hidden="true" /> Risk</span>}
                     </td>
                     <td className="td">{lab.language}</td>
                     <td className="td">{lab.assignedTo ?? <span className="text-rose-500">Unassigned</span>}</td>
@@ -432,10 +432,10 @@ export default function LabInventory() {
 }
 
 function LinkIcons({ lab }: { lab: Lab }) {
-  const items: { key: string; label: string; icon: string; value: string | null | undefined }[] = [
-    { key: 'cost', label: 'Cost estimation', icon: '💰', value: lab.costEstimationLink },
-    { key: 'release', label: 'Release notes', icon: '📝', value: lab.releaseNoteLink },
-    { key: 'ppt', label: 'PPT', icon: '📊', value: lab.pptLink }
+  const items: { key: string; label: string; icon: LucideIcon; value: string | null | undefined }[] = [
+    { key: 'cost', label: 'Cost estimation', icon: CircleDollarSign, value: lab.costEstimationLink },
+    { key: 'release', label: 'Release notes', icon: FileText, value: lab.releaseNoteLink },
+    { key: 'ppt', label: 'PPT', icon: Presentation, value: lab.pptLink }
   ];
   const shown = items
     .map(i => {
@@ -458,25 +458,24 @@ function LinkIcons({ lab }: { lab: Lab }) {
             rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
             title={`${i.label}: ${i.url}`}
-            className="inline-flex items-center justify-center w-8 h-8 rounded-md text-base leading-none border transition
-                       bg-brand-50 text-brand-700 border-brand-200 hover:bg-brand-100
-                       dark:bg-brand-700/20 dark:text-brand-100 dark:border-brand-700/40 dark:hover:bg-brand-700/40"
+            aria-label={i.label}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-primary/25 bg-primary-soft text-accent transition-colors hover:bg-primary/20"
           >
-            {i.icon}
+            <i.icon size={15} aria-hidden="true" />
           </a>
         ) : (
-          <div
+          <button
+            type="button"
             title={`${i.label}: ${i.url}\n(Click to copy)`}
-            className="inline-flex items-center justify-center w-8 h-8 rounded-md text-base leading-none border cursor-pointer transition
-                       bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100
-                       dark:bg-amber-700/20 dark:text-amber-100 dark:border-amber-700/40 dark:hover:bg-amber-700/40"
+            aria-label={`Copy ${i.label}`}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-warning/25 bg-warning/10 text-warning transition-colors hover:bg-warning/20"
             onClick={e => {
               e.stopPropagation();
               navigator.clipboard.writeText(i.url);
             }}
           >
-            {i.icon}
-          </div>
+            <i.icon size={15} aria-hidden="true" />
+          </button>
         );
         return <div key={i.key}>{element}</div>;
       })}

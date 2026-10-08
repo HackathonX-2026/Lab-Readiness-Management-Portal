@@ -7,8 +7,9 @@ import { config } from './config.js';
 // Resolve dbPath relative to the server package root (not process cwd) so the
 // DB always lands next to the source regardless of where the server is started.
 const SERVER_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const dbPath = isAbsolute(config.dbPath) ? config.dbPath : resolve(SERVER_ROOT, config.dbPath);
-mkdirSync(dirname(dbPath), { recursive: true });
+const dbPath = config.dbPath === ':memory:' ? ':memory:'
+  : isAbsolute(config.dbPath) ? config.dbPath : resolve(SERVER_ROOT, config.dbPath);
+if (dbPath !== ':memory:') mkdirSync(dirname(dbPath), { recursive: true });
 
 export const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
@@ -195,9 +196,21 @@ export function listLabs({ status, includeDeleted = false, limit = 500, offset =
   return db.prepare(sql).all({ ...params, limit, offset });
 }
 
-export function countLabs({ includeDeleted = false } = {}) {
-  const sql = `SELECT COUNT(*) as c FROM labs ${includeDeleted ? '' : 'WHERE deleted_at IS NULL'}`;
-  return db.prepare(sql).get().c;
+export function getLab(id) {
+  return db.prepare('SELECT * FROM labs WHERE id = ? AND deleted_at IS NULL').get(id);
+}
+
+export function countLabs({ includeDeleted = false, status, q } = {}) {
+  const where = [];
+  const params = {};
+  if (!includeDeleted) where.push('deleted_at IS NULL');
+  if (status) { where.push('request_status = @status'); params.status = status; }
+  if (q) {
+    where.push('(lab_name LIKE @q OR track_title LIKE @q OR customer LIKE @q OR primary_contact LIKE @q)');
+    params.q = `%${q}%`;
+  }
+  const sql = `SELECT COUNT(*) as c FROM labs ${where.length ? 'WHERE ' + where.join(' AND ') : ''}`;
+  return db.prepare(sql).get(params).c;
 }
 
 export function latestSyncRun() {

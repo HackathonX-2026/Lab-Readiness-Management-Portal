@@ -1,19 +1,14 @@
 import { useMemo } from 'react';
+import { Activity, ArrowUpRight, CalendarDays, CircleCheck, Clock3, FlaskConical, RefreshCw, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLabs } from '../state/LabsContext';
 import { daysToWorkshop, isAtRisk, readinessStatus } from '../lib/rules';
 import { PageHeader, StatCard } from '../components/ui';
+import { CHART_COLORS, READINESS_COLORS as COLORS } from '../lib/chartTheme';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, CartesianGrid
 } from 'recharts';
-
-const COLORS = {
-  Ready: '#10b981',
-  'Retest Required': '#f59e0b',
-  'Testing Pending': '#0ea5e9',
-  'Action Required': '#e11d48'
-};
 
 export default function Dashboard() {
   const { labs } = useLabs();
@@ -90,8 +85,6 @@ export default function Dashboard() {
 
   return (
     <div>
-      <HeroBanner totalLabs={stats.total} readinessPct={readinessPct} lastUpdated={lastUpdated} />
-
       <PageHeader
         title="Executive Dashboard"
         subtitle="Real-time readiness across all production labs and upcoming workshops."
@@ -99,13 +92,15 @@ export default function Dashboard() {
         {lastUpdated && <LastUpdatedPill when={lastUpdated} />}
       </PageHeader>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <StatCard label="Total Labs" value={stats.total} icon="🧪" onClick={() => go({})} />
-        <StatCard label="Upcoming Workshops (30d)" value={stats.upcoming} icon="📅" tone="info" onClick={() => go({ workshop: '30' })} />
-        <StatCard label="Ready" value={stats.ready} icon="✅" tone="good" onClick={() => go({ readiness: 'Ready' })} />
-        <StatCard label="Retest Required" value={stats.retest} icon="🔁" tone="warn" onClick={() => go({ readiness: 'Retest Required' })} />
-        <StatCard label="Action Required" value={stats.failed} icon="🚨" tone="bad" onClick={() => go({ readiness: 'Action Required' })} />
-        <StatCard label="Testing Pending" value={stats.pending} icon="⏳" tone="info" onClick={() => go({ readiness: 'Testing Pending' })} />
+      <HeroBanner totalLabs={stats.total} readinessPct={readinessPct} lastUpdated={lastUpdated} />
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <StatCard label="Total Labs" value={stats.total} icon={<FlaskConical />} onClick={() => go({})} />
+        <StatCard label="Workshops (30d)" value={stats.upcoming} icon={<CalendarDays />} tone="info" onClick={() => go({ workshop: '30' })} />
+        <StatCard label="Ready" value={stats.ready} icon={<CircleCheck />} tone="good" onClick={() => go({ readiness: 'Ready' })} />
+        <StatCard label="Retest Required" value={stats.retest} icon={<RefreshCw />} tone="warn" onClick={() => go({ readiness: 'Retest Required' })} />
+        <StatCard label="Action Required" value={stats.failed} icon={<TriangleAlert />} tone="bad" onClick={() => go({ readiness: 'Action Required' })} />
+        <StatCard label="Testing Pending" value={stats.pending} icon={<Clock3 />} tone="info" onClick={() => go({ readiness: 'Testing Pending' })} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-6">
@@ -119,11 +114,11 @@ export default function Dashboard() {
           <div className="h-72">
             <ResponsiveContainer>
               <BarChart data={trackData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.border} vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={70} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Legend />
+                <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" iconSize={7} />
                 <Bar dataKey="Ready" stackId="a" fill={COLORS.Ready} />
                 <Bar dataKey="Retest" stackId="a" fill={COLORS['Retest Required']} />
                 <Bar dataKey="Pending" stackId="a" fill={COLORS['Testing Pending']} />
@@ -139,17 +134,17 @@ export default function Dashboard() {
           <div className="h-72">
             <ResponsiveContainer>
               <PieChart>
-                <Pie data={readinessData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={2}>
+                <Pie data={readinessData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={90} paddingAngle={3} stroke={CHART_COLORS.card}>
                   {readinessData.map(d => (
                     <Cell key={d.name} fill={COLORS[d.name as keyof typeof COLORS]} />
                   ))}
                 </Pie>
                 <Tooltip />
-                <Legend verticalAlign="bottom" height={30} wrapperStyle={{ fontSize: 11 }} />
+                <Legend verticalAlign="bottom" height={40} wrapperStyle={{ fontSize: 11 }} iconType="circle" iconSize={7} />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="text-center text-3xl font-bold text-brand-700">{readinessPct}%</div>
+          <div className="text-center text-3xl font-semibold tabular-nums text-accent">{readinessPct}%</div>
           <div className="text-center text-xs text-slate-500">Ready across portfolio</div>
         </div>
       </div>
@@ -160,11 +155,11 @@ export default function Dashboard() {
         <div className="h-64">
           <ResponsiveContainer>
             <BarChart data={workshopTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.border} vertical={false} />
               <XAxis dataKey="label" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="count" fill="#4f6bed" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="count" fill={CHART_COLORS.primary} radius={[6, 6, 0, 0]} maxBarSize={80} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -174,12 +169,14 @@ export default function Dashboard() {
         <button
           type="button"
           onClick={() => go({ risk: '1' })}
-          className="card w-full text-left p-5 mt-6 border-l-4 border-rose-500 hover:shadow-md transition"
+          className="card mt-6 flex w-full items-center gap-3 border-danger/25 p-5 text-left transition-colors hover:border-danger/50"
         >
-          <div className="text-sm font-semibold text-rose-700">⚠️ {stats.risk} labs are currently at risk</div>
-          <div className="text-xs text-slate-500 mt-1">
-            Click to open the Lab Inventory filtered by at-risk labs.
+          <TriangleAlert size={20} className="shrink-0 text-danger" aria-hidden="true" />
+          <div>
+            <div className="text-sm font-medium text-danger">{stats.risk} labs are currently at risk</div>
+            <div className="mt-1 text-xs text-muted">Click to open the Lab Inventory filtered by at-risk labs.</div>
           </div>
+          <ArrowUpRight size={16} className="ml-auto shrink-0 text-muted" aria-hidden="true" />
         </button>
       )}
     </div>
@@ -194,19 +191,10 @@ function LastUpdatedPill({ when }: { when: Date }) {
     hour: 'numeric',
     minute: '2-digit'
   }).replace(',', ',');
-  const [date, time] = label.split(/\s(?=\d{1,2}:\d{2})/); // split off time part
   return (
-    <div className="flex flex-col items-end gap-1.5" title={when.toString()}>
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
-                       bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-200">
-        <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
-        Last Updated
-      </span>
-      <div className="px-3 py-1 rounded-lg text-xs font-mono
-                      bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200
-                      border border-slate-200 dark:border-slate-700">
-        {date} • {time}
-      </div>
+    <div className="flex items-center gap-2 rounded-lg border border-border bg-card/70 px-3 py-2 text-[11px] text-muted" title={when.toString()}>
+      <Clock3 size={13} className="shrink-0 text-subtle" aria-hidden="true" />
+      <span>Updated <time dateTime={when.toISOString()}>{label}</time></span>
     </div>
   );
 }
@@ -227,46 +215,26 @@ function HeroBanner({
     day: 'numeric'
   });
   return (
-    <div className="relative overflow-hidden rounded-2xl mb-6 shadow-lg">
-      {/* Gradient backdrop */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'linear-gradient(120deg, #1c2966 0%, #4f6bed 45%, #7c3aed 100%)'
-        }}
-      />
-      {/* Decorative blobs */}
-      <div className="absolute -top-20 -right-16 w-72 h-72 rounded-full opacity-30"
-           style={{ background: 'radial-gradient(circle, #ffffff 0%, transparent 70%)' }} />
-      <div className="absolute -bottom-24 -left-10 w-80 h-80 rounded-full opacity-20"
-           style={{ background: 'radial-gradient(circle, #a78bfa 0%, transparent 70%)' }} />
-
-      <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 p-8 text-white">
-        <div className="flex items-start gap-5">
-          <div className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur grid place-items-center text-3xl shrink-0 border border-white/20">
-            🚀
+    <section aria-label="Portfolio overview" className="card relative mb-6 overflow-hidden">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent" />
+      <div className="relative flex flex-col gap-6 p-6 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl border border-primary/25 bg-primary-soft text-accent sm:grid">
+            <ShieldCheck size={21} aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <div className="text-[11px] font-bold uppercase tracking-widest text-white/70 mb-1">
+            <div className="mb-2 text-[10px] font-medium uppercase tracking-widest text-muted">
               Microsoft Innovation
             </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold leading-tight tracking-tight">
-              MS Innovation
-              <span className="mx-2 text-white/50 font-light">—</span>
-              <span className="text-transparent bg-clip-text"
-                    style={{ backgroundImage: 'linear-gradient(90deg, #fef3c7, #f0abfc)' }}>
-                Lab Readiness Portal
-              </span>
-            </h1>
-            <p className="mt-2 text-sm md:text-base text-white/80 max-w-2xl">
+            <h2 className="gradient-text text-2xl font-semibold leading-tight tracking-tight">Lab Readiness Portal</h2>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
               Track production lab health, upcoming workshops, and testing status — all in one place.
             </p>
-            <div className="mt-3 text-xs text-white/60">{today}</div>
+            <div className="mt-3 flex items-center gap-1.5 text-[11px] text-muted"><Activity size={12} aria-hidden="true" /> {today}</div>
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-3 lg:justify-end">
+        <div className="grid shrink-0 grid-cols-3 gap-2 xl:min-w-[280px]">
           <HeroStat label="Total Labs" value={totalLabs.toString()} />
           <HeroStat label="Ready" value={`${readinessPct}%`} accent />
           <HeroStat
@@ -275,17 +243,17 @@ function HeroBanner({
           />
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
 function HeroStat({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className={`px-4 py-3 rounded-xl backdrop-blur border ${
-      accent ? 'bg-white/20 border-white/30' : 'bg-white/10 border-white/15'
+    <div className={`rounded-xl border px-3 py-3 ${
+      accent ? 'border-primary/25 bg-primary-soft' : 'border-border bg-background/40'
     }`}>
-      <div className="text-[10px] uppercase tracking-wider font-semibold text-white/70">{label}</div>
-      <div className="text-2xl font-bold text-white mt-0.5">{value}</div>
+      <div className="text-[10px] font-medium uppercase tracking-wider text-muted">{label}</div>
+      <div className={`mt-1 text-xl font-semibold tabular-nums ${accent ? 'text-accent' : 'text-foreground'}`}>{value}</div>
     </div>
   );
 }

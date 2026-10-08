@@ -40,14 +40,20 @@ export async function runSync() {
     let pageNumber = 1;
     const pageSize = 100;
     let totalItems = null;
+    let complete = false;
+    const seenIds = new Set();
 
     while (pageNumber <= config.syncMaxPages) {
       const resp = await cloudlabs.listWorkshopRequests({ pageNumber, pageSize });
-      if (!resp?.isSuccess) {
-        throw new Error(`CloudLabs returned isSuccess=false: ${resp?.message || 'unknown'}`);
+      if (resp?.isSuccess !== true || !Array.isArray(resp.data?.value)) {
+        throw new Error('CloudLabs returned an invalid workshop list. Existing records were not removed.');
       }
-      const items = resp.data?.value ?? [];
-      totalItems = resp.data?.totalItems ?? totalItems;
+      const items = resp.data.value;
+      totalItems = Number.isSafeInteger(resp.data.totalItems) && resp.data.totalItems >= 0 ? resp.data.totalItems : totalItems;
+      for (const raw of items) {
+        if (raw?.id == null || seenIds.has(String(raw.id))) throw new Error('CloudLabs returned missing or repeated workshop IDs. Existing records were not removed.');
+        seenIds.add(String(raw.id));
+      }
       stats.pages++;
       stats.fetched += items.length;
 
@@ -69,8 +75,12 @@ export async function runSync() {
 
       logger.debug('sync.page', { runId, pageNumber, items: items.length, totalItems });
 
-      if (items.length < pageSize) break;
+      if (items.length < pageSize) { complete = true; break; }
       pageNumber++;
+    }
+
+    if (!complete || (totalItems !== null && stats.fetched < totalItems)) {
+      throw new Error('CloudLabs workshop pagination was incomplete. Existing records were not removed.');
     }
 
     // In-window rows we didn't touch this run are considered removed at the source.

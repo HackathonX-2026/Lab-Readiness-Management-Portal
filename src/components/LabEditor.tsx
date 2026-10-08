@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from 'react';
+import { Check, Copy, ExternalLink, FolderOpen, X } from 'lucide-react';
 import type { Lab, Priority, TestStatus } from '../types';
+import { useDialogFocus } from '../lib/useDialogFocus';
 
 export default function LabEditor({
   lab, onSave, onClose, readOnly = false
@@ -9,6 +11,7 @@ export default function LabEditor({
   onClose: () => void;
   readOnly?: boolean;
 }) {
+  const dialogRef = useDialogFocus<HTMLFormElement>(true, onClose);
   const [form, setForm] = useState<Partial<Lab>>({
     trackName: lab?.trackName ?? '',
     labName: lab?.labName ?? '',
@@ -65,20 +68,25 @@ export default function LabEditor({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/40 z-30 flex items-center justify-center p-4" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose}>
       <form
-        className="card w-full max-w-3xl p-6 max-h-[90vh] overflow-auto"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="lab-editor-title"
+        tabIndex={-1}
+        className="popover max-h-[90dvh] w-full max-w-3xl overflow-auto rounded-2xl p-5 sm:p-6"
         onClick={e => e.stopPropagation()}
         onSubmit={submit}
       >
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold">{lab ? (readOnly ? 'View Lab' : 'Edit Lab') : 'Add Lab'}</h2>
-          <button type="button" className="text-slate-400 hover:text-slate-700" onClick={onClose}>✕</button>
+          <h2 id="lab-editor-title" className="text-lg font-semibold tracking-tight">{lab ? (readOnly ? 'View Lab' : 'Edit Lab') : 'Add Lab'}</h2>
+          <button type="button" className="btn-icon" aria-label="Close lab editor" onClick={onClose}><X size={17} aria-hidden="true" /></button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Track Name *">
-            <input className="input" required disabled={readOnly}
+            <input className="input" data-initial-focus={!readOnly || undefined} required disabled={readOnly}
               value={form.trackName as string} onChange={e => set('trackName', e.target.value)} />
           </Field>
           <Field label="Lab Name *">
@@ -141,23 +149,23 @@ export default function LabEditor({
         </div>
 
         {/* Resources Section */}
-        <div className="mt-6 p-4 bg-brand-50 dark:bg-brand-950/20 rounded-lg border border-brand-200 dark:border-brand-800">
-          <h3 className="text-sm font-bold text-brand-900 dark:text-brand-100 mb-2 flex items-center gap-2">
-            📦 Resources & Documentation
+        <div className="mt-6 rounded-xl border border-border bg-surface/70 p-4">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-medium text-foreground">
+            <FolderOpen size={16} className="text-accent" aria-hidden="true" /> Resources & Documentation
           </h3>
-          <p className="text-xs text-brand-700 dark:text-brand-200 mb-3 leading-relaxed">
+          <p className="mb-4 text-xs leading-relaxed text-muted">
             Add links to important resources below. You can paste full URLs or file names. Links will appear as quick-access icons in the lab list.
           </p>
           <div className="grid grid-cols-1 gap-3">
-            <Field label="💰 Cost Estimation Link" full>
+            <Field label="Cost Estimation Link" full>
               <LinkField value={form.costEstimationLink as string} readOnly={readOnly}
                 onChange={v => set('costEstimationLink', v)} placeholder="URL or SharePoint link" />
             </Field>
-            <Field label="📝 Release Note Link" full>
+            <Field label="Release Note Link" full>
               <LinkField value={form.releaseNoteLink as string} readOnly={readOnly}
                 onChange={v => set('releaseNoteLink', v)} placeholder="GitHub URL or PR reference" />
             </Field>
-            <Field label="📊 PPT Link" full>
+            <Field label="PPT Link" full>
               <LinkField value={form.pptLink as string} readOnly={readOnly}
                 onChange={v => set('pptLink', v)} placeholder="SharePoint URL or file name" />
             </Field>
@@ -200,8 +208,8 @@ export default function LabEditor({
 
 function Field({ label, full, children }: { label: string; full?: boolean; children: React.ReactNode }) {
   return (
-    <label className={`text-sm ${full ? 'col-span-2' : ''}`}>
-      <div className="text-xs font-semibold text-slate-600 mb-1">{label}</div>
+    <label className={`min-w-0 text-sm ${full ? 'col-span-full' : ''}`}>
+      <div className="mb-1.5 text-xs font-medium text-muted">{label}</div>
       {children}
     </label>
   );
@@ -224,9 +232,9 @@ function LinkField({ value, onChange, readOnly, placeholder }: {
   };
 
   return (
-    <div className="flex gap-2 items-center">
+    <div className="flex flex-wrap items-center gap-2">
       <input
-        className="input flex-1"
+        className="input w-full sm:flex-1"
         disabled={readOnly}
         value={v}
         placeholder={placeholder}
@@ -242,7 +250,7 @@ function LinkField({ value, onChange, readOnly, placeholder }: {
               className="btn-secondary shrink-0 text-sm"
               title="Open link"
             >
-              ↗ Open
+              <ExternalLink size={13} aria-hidden="true" /> Open
             </a>
           )}
           <button
@@ -251,7 +259,7 @@ function LinkField({ value, onChange, readOnly, placeholder }: {
             className="btn-secondary shrink-0 text-sm"
             title="Copy to clipboard"
           >
-            {copied ? '✓ Copied' : '📋 Copy'}
+            {copied ? <><Check size={13} aria-hidden="true" /> Copied</> : <><Copy size={13} aria-hidden="true" /> Copy</>}
           </button>
         </>
       )}

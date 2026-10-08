@@ -2,6 +2,27 @@
 // The Vite dev server proxies `/api` to http://localhost:3001 (see vite.config.ts).
 // In production, place the sync-server behind the same reverse proxy as the SPA
 // so `/api` resolves without hardcoding a hostname.
+import type { AuditOverview, AuditSummary, CatalogSnapshot, CloudLabsAuditRecord, CloudLabsConnection } from '../../shared/cloudlabs';
+export type { AuditOverview, AuditSummary, CatalogLab, CatalogDelivery, CatalogSnapshot, CloudLabsAuditRecord, CloudLabsConnection } from '../../shared/cloudlabs';
+
+export interface CatalogResponse {
+  snapshot: CatalogSnapshot | null;
+  connection: CloudLabsConnection;
+  configured: boolean;
+  canRefresh: boolean;
+  catalogInFlight: boolean;
+  auditInFlight: boolean;
+}
+export interface CloudLabsHealth {
+  ok: boolean;
+  partnerId: string;
+  tokenConfigured: boolean;
+  workshopConfigured: boolean;
+  canSync: boolean;
+  catalogConnection: CloudLabsConnection;
+  labsInDb: number;
+  lastSync: SyncRun | null;
+}
 
 export interface RemoteLab {
   id: string;
@@ -49,22 +70,26 @@ export interface SyncRun {
 }
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
-    headers: { 'accept': 'application/json', ...(init?.headers || {}) },
-    ...init
-  });
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      ...init,
+      headers: { accept: 'application/json', ...(init?.body ? { 'content-type': 'application/json' } : {}), ...(init?.headers || {}) },
+      cache: 'no-store', signal: init?.signal ?? AbortSignal.timeout(120000)
+    });
+  } catch {
+    throw new Error('Unable to reach the sync server. Check that the backend is running, then retry.');
+  }
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Sync API ${res.status} on ${path}: ${text.slice(0, 200)}`);
+    const data = await res.json().catch(() => null);
+    throw new Error(typeof data?.error === 'string' ? data.error.slice(0, 400) : `Sync server returned HTTP ${res.status}.`);
   }
   return res.json() as Promise<T>;
 }
 
 export const cloudlabsApi = {
   health() {
-    return req<{ ok: boolean; partnerId: string; tokenConfigured: boolean; labsInDb: number; lastSync: SyncRun | null }>(
-      '/api/health'
-    );
+    return req<CloudLabsHealth>('/api/health');
   },
   listLabs(params: { status?: string; q?: string; includeDeleted?: boolean; limit?: number; offset?: number } = {}) {
     const qs = new URLSearchParams();
@@ -87,5 +112,26 @@ export const cloudlabsApi = {
       '/api/sync/run',
       { method: 'POST' }
     );
+  },
+  catalog() { return req<CatalogResponse>('/api/cloudlabs'); },
+  catalogConnection() { return req<CloudLabsConnection>('/api/cloudlabs/connection'); },
+  refreshCatalog() {
+    return req<{ snapshot: CatalogSnapshot; connection: CloudLabsConnection; configured: boolean; labs: number; deliveries: number }>(
+      '/api/cloudlabs', { method: 'POST' }
+    );
+  },
+  templateDetails(templateId: string) {
+    return req<{ templateId: string; masterDocUrl: string | null }>(`/api/cloudlabs/templates/${encodeURIComponent(templateId)}`);
+  },
+  auditOverview() { return req<{ items: AuditOverview[] }>('/api/cloudlabs/audits/overview'); },
+  audit(templateId: string) {
+    return req<{ templateId: string; record: CloudLabsAuditRecord | null; summary: AuditSummary }>(
+      `/api/cloudlabs/audits?${new URLSearchParams({ templateId })}`
+    );
+  },
+  refreshAudits(templateIds: string[]) {
+    return req<{ items: AuditOverview[]; ok: boolean }>('/api/cloudlabs/audits', {
+      method: 'POST', body: JSON.stringify({ templateIds })
+    });
   }
 };

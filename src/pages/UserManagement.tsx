@@ -1,15 +1,17 @@
 import { useState, type FormEvent } from 'react';
+import { Plus, X } from 'lucide-react';
 import { useAuth } from '../state/AuthContext';
 import { Badge, EmptyState, PageHeader } from '../components/ui';
 import type { AppUser, Role } from '../types';
+import { useDialogFocus } from '../lib/useDialogFocus';
 
 const ROLES: Role[] = ['Admin', 'Tester', 'Manager'];
 
 function roleBadge(r: Role): string {
   switch (r) {
-    case 'Admin': return 'bg-brand-100 text-brand-900 dark:bg-brand-700/30 dark:text-brand-100';
-    case 'Tester': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200';
-    case 'Manager': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200';
+    case 'Admin': return 'status-primary';
+    case 'Tester': return 'status-good';
+    case 'Manager': return 'status-warn';
   }
 }
 
@@ -25,10 +27,10 @@ export default function UserManagement() {
   return (
     <div>
       <PageHeader title="User Management" subtitle="Create accounts, assign roles, reset passwords.">
-        <button className="btn-primary" onClick={() => setOpenAdd(true)}>➕ Add User</button>
+        <button className="btn-primary" onClick={() => setOpenAdd(true)}><Plus size={15} aria-hidden="true" /> Add User</button>
       </PageHeader>
 
-      <div className="card overflow-hidden">
+      <div className="card overflow-x-auto">
         <table className="w-full">
           <thead className="bg-slate-50">
             <tr>
@@ -45,7 +47,7 @@ export default function UserManagement() {
               <tr key={u.id} className="border-t border-slate-100">
                 <td className="td">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-brand-600 text-white grid place-items-center text-xs font-semibold">
+                    <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/20 text-xs font-medium text-accent">
                       {u.displayName.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase()}
                     </div>
                     <div>
@@ -61,8 +63,8 @@ export default function UserManagement() {
                 <td className="td"><Badge className={roleBadge(u.role)}>{u.role}</Badge></td>
                 <td className="td">
                   {u.disabled
-                    ? <Badge className="bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300">Disabled</Badge>
-                    : <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">Active</Badge>}
+                    ? <Badge className="status-neutral">Disabled</Badge>
+                    : <Badge className="status-good">Active</Badge>}
                 </td>
                 <td className="td">{new Date(u.createdAt).toLocaleDateString()}</td>
                 <td className="td whitespace-nowrap">
@@ -192,12 +194,13 @@ function EditUserForm({ user, onSave, onClose }: { user: AppUser; onSave: (patch
 }
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  const dialogRef = useDialogFocus<HTMLDivElement>(true, onClose);
   return (
-    <div className="fixed inset-0 bg-slate-900/40 z-30 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="card w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="user-dialog-title" tabIndex={-1} className="popover max-h-[90dvh] w-full max-w-md overflow-auto rounded-2xl p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">{title}</h2>
-          <button type="button" className="text-slate-400 hover:text-slate-700" onClick={onClose}>✕</button>
+          <h2 id="user-dialog-title" className="text-lg font-semibold tracking-tight text-foreground">{title}</h2>
+          <button type="button" className="btn-icon" aria-label="Close user dialog" onClick={onClose}><X size={17} aria-hidden="true" /></button>
         </div>
         {children}
       </div>
