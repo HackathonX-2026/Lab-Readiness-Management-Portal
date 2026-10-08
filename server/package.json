@@ -3,11 +3,13 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": { "node": ">=24" },
   "description": "Backend sync service that mirrors CloudLabs Admin data into a local database and serves it to the React frontend.",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "sync:once": "node src/run-sync-once.js"
+    "sync:once": "node src/run-sync-once.js",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.4.1",

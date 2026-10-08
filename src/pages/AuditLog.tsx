@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { useAudit } from '../state/AuditContext';
 import { useAuth } from '../state/AuthContext';
 import { EmptyState, PageHeader } from '../components/ui';
@@ -24,7 +25,7 @@ export default function AuditLog() {
   return (
     <div>
       <PageHeader title="Audit Log" subtitle={`${filtered.length} of ${entries.length} events`}>
-        <button className="btn-secondary" onClick={() => confirm('Clear the entire audit log?') && clear()}>🗑️ Clear log</button>
+        <button className="btn-secondary" onClick={() => confirm('Clear the entire audit log?') && clear()}><Trash2 size={15} aria-hidden="true" /> Clear log</button>
       </PageHeader>
 
       <div className="card p-3 mb-4 flex flex-wrap gap-3 items-center">
@@ -42,7 +43,7 @@ export default function AuditLog() {
       {filtered.length === 0 ? (
         <EmptyState title="No events yet" hint="Actions across the portal will appear here." />
       ) : (
-        <div className="card overflow-hidden">
+        <div className="card overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50">
               <tr>

@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
+import { CalendarDays, ChartNoAxesCombined, TriangleAlert, Users } from 'lucide-react';
 import { useLabs } from '../state/LabsContext';
 import { daysToWorkshop, isAtRisk, readinessStatus, riskReasons } from '../lib/rules';
 import { PageHeader, StatCard } from '../components/ui';
+import { CHART_COLORS, CHART_PALETTE as COLORS } from '../lib/chartTheme';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, Legend } from 'recharts';
-
-const COLORS = ['#4f6bed', '#10b981', '#f59e0b', '#e11d48', '#0ea5e9', '#8b5cf6', '#f97316'];
 
 export default function Reporting() {
   const { labs } = useLabs();
@@ -62,10 +62,10 @@ export default function Reporting() {
       <PageHeader title="Reporting & Analytics" subtitle="Portfolio health, tester performance, and risk overview." />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatCard label="Overall Readiness" value={`${readinessPct}%`} icon="📈" tone="good" />
-        <StatCard label="Workshop Coverage (30d)" value={`${workshopCoverage.coverage}%`} hint={`${workshopCoverage.ready}/${workshopCoverage.total} ready`} icon="📅" tone="info" />
-        <StatCard label="Labs at Risk" value={atRiskCount} icon="⚠️" tone="bad" />
-        <StatCard label="Testers Active" value={testerPerf.filter(t => t.name !== 'Unassigned').length} icon="🧑‍🔬" />
+        <StatCard label="Overall Readiness" value={`${readinessPct}%`} icon={<ChartNoAxesCombined />} tone="good" />
+        <StatCard label="Workshop Coverage (30d)" value={`${workshopCoverage.coverage}%`} hint={`${workshopCoverage.ready}/${workshopCoverage.total} ready`} icon={<CalendarDays />} tone="info" />
+        <StatCard label="Labs at Risk" value={atRiskCount} icon={<TriangleAlert />} tone="bad" />
+        <StatCard label="Testers Active" value={testerPerf.filter(t => t.name !== 'Unassigned').length} icon={<Users />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -75,14 +75,14 @@ export default function Reporting() {
           <div className="h-72">
             <ResponsiveContainer>
               <BarChart data={testerPerf}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.border} vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-20} textAnchor="end" height={70} interval={0} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Legend />
-                <Bar dataKey="passed" stackId="s" fill="#10b981" name="Passed" />
-                <Bar dataKey="failed" stackId="s" fill="#e11d48" name="Failed" />
-                <Bar dataKey="pending" stackId="s" fill="#0ea5e9" name="Pending" />
+                <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" iconSize={7} />
+                <Bar dataKey="passed" stackId="s" fill={CHART_COLORS.success} name="Passed" />
+                <Bar dataKey="failed" stackId="s" fill={CHART_COLORS.danger} name="Failed" />
+                <Bar dataKey="pending" stackId="s" fill={CHART_COLORS.info} name="Pending" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -94,11 +94,11 @@ export default function Reporting() {
           <div className="h-72">
             <ResponsiveContainer>
               <PieChart>
-                <Pie data={languageDist} dataKey="value" nameKey="name" outerRadius={100}>
+                <Pie data={languageDist} dataKey="value" nameKey="name" innerRadius={55} outerRadius={100} paddingAngle={3} stroke={CHART_COLORS.card}>
                   {languageDist.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip />
-                <Legend />
+                <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" iconSize={7} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -110,11 +110,11 @@ export default function Reporting() {
           <div className="h-64">
             <ResponsiveContainer>
               <BarChart data={risks} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.border} horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11 }} />
-                <YAxis type="category" dataKey="name" width={280} tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11 }} />
                 <Tooltip />
-                <Bar dataKey="value" fill="#e11d48" radius={[0, 6, 6, 0]} />
+                <Bar dataKey="value" fill={CHART_COLORS.danger} radius={[0, 6, 6, 0]} maxBarSize={36} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -122,6 +122,7 @@ export default function Reporting() {
 
         <div className="card p-5 lg:col-span-2">
           <div className="text-sm font-semibold text-slate-800 mb-3">Tester Leaderboard</div>
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr>
@@ -138,13 +139,13 @@ export default function Reporting() {
                 <tr key={t.name} className="border-t border-slate-100">
                   <td className="td font-medium">{t.name}</td>
                   <td className="td">{t.total}</td>
-                  <td className="td text-emerald-700">{t.passed}</td>
-                  <td className="td text-rose-700">{t.failed}</td>
-                  <td className="td text-sky-700">{t.pending}</td>
+                  <td className="td text-success">{t.passed}</td>
+                  <td className="td text-danger">{t.failed}</td>
+                  <td className="td text-info">{t.pending}</td>
                   <td className="td">
                     <div className="flex items-center gap-2">
                       <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500" style={{ width: `${t.passRate}%` }} />
+                        <div className="h-full bg-success" style={{ width: `${t.passRate}%` }} />
                       </div>
                       <span className="text-xs">{t.passRate}%</span>
                     </div>
@@ -153,6 +154,7 @@ export default function Reporting() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

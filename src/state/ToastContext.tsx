@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
+import { CircleCheck, CircleX, Info, TriangleAlert, X, type LucideIcon } from 'lucide-react';
 
 export type ToastKind = 'success' | 'error' | 'info' | 'warning';
 
@@ -58,11 +59,11 @@ export function useToast() {
 }
 
 function ToastViewport({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id: string) => void }) {
-  const styles: Record<ToastKind, { bg: string; icon: string; ring: string }> = {
-    success: { bg: 'bg-emerald-50 border-emerald-300 dark:bg-emerald-900/40 dark:border-emerald-700', icon: '✅', ring: 'ring-emerald-500' },
-    error:   { bg: 'bg-rose-50 border-rose-300 dark:bg-rose-900/40 dark:border-rose-700', icon: '🚨', ring: 'ring-rose-500' },
-    info:    { bg: 'bg-sky-50 border-sky-300 dark:bg-sky-900/40 dark:border-sky-700', icon: 'ℹ️', ring: 'ring-sky-500' },
-    warning: { bg: 'bg-amber-50 border-amber-300 dark:bg-amber-900/40 dark:border-amber-700', icon: '⚠️', ring: 'ring-amber-500' }
+  const styles: Record<ToastKind, { color: string; icon: LucideIcon }> = {
+    success: { color: 'status-good', icon: CircleCheck },
+    error:   { color: 'status-bad', icon: CircleX },
+    info:    { color: 'status-info', icon: Info },
+    warning: { color: 'status-warn', icon: TriangleAlert }
   };
   return (
     <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 w-96 max-w-[calc(100vw-2rem)] pointer-events-none">
@@ -71,20 +72,20 @@ function ToastViewport({ toasts, onDismiss }: { toasts: Toast[]; onDismiss: (id:
         return (
           <div
             key={t.id}
-            className={`pointer-events-auto rounded-xl border shadow-lg px-4 py-3 flex items-start gap-3 ${s.bg} animate-[slideIn_0.2s_ease-out]`}
+            className="popover pointer-events-auto flex animate-[slideIn_0.2s_ease-out] items-start gap-3 px-4 py-3"
             role="status"
           >
-            <div className="text-lg leading-none mt-0.5">{s.icon}</div>
+            <div className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg border ${s.color}`}><s.icon size={15} aria-hidden="true" /></div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{t.title}</div>
-              {t.message && <div className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 break-words">{t.message}</div>}
+              <div className="text-sm font-medium text-foreground">{t.title}</div>
+              {t.message && <div className="mt-1 break-words text-xs text-muted">{t.message}</div>}
             </div>
             <button
-              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-100 text-sm leading-none"
+              className="btn-icon h-6 w-6"
               onClick={() => onDismiss(t.id)}
               aria-label="Dismiss"
             >
-              ✕
+              <X size={14} aria-hidden="true" />
             </button>
           </div>
         );

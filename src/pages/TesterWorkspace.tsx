@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { CalendarDays, ClipboardList, Clock3, RefreshCw, TriangleAlert } from 'lucide-react';
 import { useLabs } from '../state/LabsContext';
 import { useRole } from '../state/RoleContext';
 import { daysToWorkshop, readinessColor, readinessStatus, testStatusColor } from '../lib/rules';
@@ -37,19 +38,20 @@ export default function TesterWorkspace() {
         subtitle={`Signed in as ${testerName} (${role}). Update statuses directly from this view.`}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-        <StatCard label="Assigned to me" value={mine.length} icon="📋" />
-        <StatCard label="Pending tests" value={groups.pending.length} icon="⏳" tone="info" />
-        <StatCard label="Failed" value={groups.failed.length} icon="🚨" tone="bad" />
-        <StatCard label="Retest requests" value={groups.retest.length} icon="🔁" tone="warn" />
-        <StatCard label="Upcoming (15d)" value={groups.deadlines.length} icon="📅" />
+      <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        <StatCard label="Assigned to me" value={mine.length} icon={<ClipboardList />} />
+        <StatCard label="Pending tests" value={groups.pending.length} icon={<Clock3 />} tone="info" />
+        <StatCard label="Failed" value={groups.failed.length} icon={<TriangleAlert />} tone="bad" />
+        <StatCard label="Retest requests" value={groups.retest.length} icon={<RefreshCw />} tone="warn" />
+        <StatCard label="Upcoming (15d)" value={groups.deadlines.length} icon={<CalendarDays />} />
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
         {(['all', 'pending', 'failed', 'retest', 'deadlines'] as const).map(t => (
           <button
             key={t}
-            className={`btn ${tab === t ? 'btn-primary' : 'btn-secondary'}`}
+            className="filter-button"
+            aria-pressed={tab === t}
             onClick={() => setTab(t)}
           >
             {t === 'all' ? 'All' : t === 'pending' ? 'Pending' : t === 'failed' ? 'Failed' : t === 'retest' ? 'Retest' : 'Upcoming'}

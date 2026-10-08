@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Activity, CalendarDays, ChartNoAxesCombined, CloudCog, FlaskConical, LayoutDashboard, LogOut, Moon, RefreshCw, Search, ShieldCheck, Sun, TriangleAlert, Users, UserCheck, type LucideIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLabs } from '../state/LabsContext';
 import { useAuth } from '../state/AuthContext';
 import { useTheme } from '../state/ThemeContext';
 import { useToast } from '../state/ToastContext';
+import { useDialogFocus } from '../lib/useDialogFocus';
 
 interface Command {
   id: string;
   label: string;
   hint?: string;
-  icon: string;
+  icon: LucideIcon;
   section: 'Navigate' | 'Actions' | 'Labs';
   run: () => void;
   keywords?: string;
@@ -23,43 +25,44 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
   const toast = useToast();
   const [q, setQ] = useState('');
   const [idx, setIdx] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useDialogFocus<HTMLDivElement>(open, onClose);
 
   useEffect(() => {
     if (open) {
       setQ('');
       setIdx(0);
-      setTimeout(() => inputRef.current?.focus(), 20);
     }
   }, [open]);
 
   const commands: Command[] = useMemo(() => {
     const nav: Command[] = [
-      { id: 'nav-dash', label: 'Executive Dashboard', icon: '📊', section: 'Navigate', run: () => navigate('/') },
-      { id: 'nav-inv', label: 'Lab Inventory', icon: '🧪', section: 'Navigate', run: () => navigate('/inventory') },
-      { id: 'nav-ws', label: 'Upcoming Workshops', icon: '📅', section: 'Navigate', run: () => navigate('/workshops') },
-      { id: 'nav-test', label: 'Tester Workspace', icon: '🧑‍🔬', section: 'Navigate', run: () => navigate('/tester') },
-      { id: 'nav-retest', label: 'Retesting Center', icon: '🔁', section: 'Navigate', run: () => navigate('/retest') },
-      { id: 'nav-rep', label: 'Reporting & Analytics', icon: '📈', section: 'Navigate', run: () => navigate('/reports') }
+      { id: 'nav-dash', label: 'Executive Dashboard', icon: LayoutDashboard, section: 'Navigate', run: () => navigate('/') },
+      { id: 'nav-inv', label: 'Lab Inventory', icon: FlaskConical, section: 'Navigate', run: () => navigate('/inventory') },
+      { id: 'nav-catalog', label: 'CloudLabs Catalog', icon: CloudCog, section: 'Navigate', run: () => navigate('/catalog') },
+      { id: 'nav-cloudlabs-audits', label: 'CloudLabs Audits', icon: ShieldCheck, section: 'Navigate', run: () => navigate('/cloudlabs-audits') },
+      { id: 'nav-ws', label: 'Upcoming Workshops', icon: CalendarDays, section: 'Navigate', run: () => navigate('/workshops') },
+      { id: 'nav-test', label: 'Tester Workspace', icon: UserCheck, section: 'Navigate', run: () => navigate('/tester') },
+      { id: 'nav-retest', label: 'Retesting Center', icon: RefreshCw, section: 'Navigate', run: () => navigate('/retest') },
+      { id: 'nav-rep', label: 'Reporting & Analytics', icon: ChartNoAxesCombined, section: 'Navigate', run: () => navigate('/reports') }
     ];
     if (currentUser?.role === 'Admin') {
       nav.push(
-        { id: 'nav-users', label: 'Users', icon: '👥', section: 'Navigate', run: () => navigate('/users') },
-        { id: 'nav-audit', label: 'Audit Log', icon: '📜', section: 'Navigate', run: () => navigate('/audit') }
+        { id: 'nav-users', label: 'Users', icon: Users, section: 'Navigate', run: () => navigate('/users') },
+        { id: 'nav-audit', label: 'Audit Log', icon: Activity, section: 'Navigate', run: () => navigate('/audit') }
       );
     }
     const actions: Command[] = [
-      { id: 'act-theme', label: `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`, icon: theme === 'dark' ? '☀️' : '🌙', section: 'Actions', run: toggleTheme },
-      { id: 'act-out', label: 'Sign out', icon: '🔒', section: 'Actions', run: () => logout(), keywords: 'logout' },
-      { id: 'act-p0', label: 'Show P0 labs', icon: '🚨', section: 'Actions', run: () => navigate('/inventory?priority=P0') },
-      { id: 'act-risk', label: 'Show at-risk labs', icon: '⚠️', section: 'Actions', run: () => navigate('/inventory?risk=1') },
-      { id: 'act-retest', label: 'Show retest-required labs', icon: '🔁', section: 'Actions', run: () => navigate('/inventory?readiness=Retest+Required') }
+      { id: 'act-theme', label: `Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`, icon: theme === 'dark' ? Sun : Moon, section: 'Actions', run: toggleTheme },
+      { id: 'act-out', label: 'Sign out', icon: LogOut, section: 'Actions', run: () => logout(), keywords: 'logout' },
+      { id: 'act-p0', label: 'Show P0 labs', icon: TriangleAlert, section: 'Actions', run: () => navigate('/inventory?priority=P0') },
+      { id: 'act-risk', label: 'Show at-risk labs', icon: TriangleAlert, section: 'Actions', run: () => navigate('/inventory?risk=1') },
+      { id: 'act-retest', label: 'Show retest-required labs', icon: RefreshCw, section: 'Actions', run: () => navigate('/inventory?readiness=Retest+Required') }
     ];
     const labCmds: Command[] = labs.slice(0, 200).map(l => ({
       id: `lab-${l.id}`,
       label: l.labName,
       hint: `${l.trackName} · ${l.language}${l.assignedTo ? ` · ${l.assignedTo}` : ''}`,
-      icon: '🧪',
+      icon: FlaskConical,
       section: 'Labs' as const,
       run: () => navigate(`/inventory?q=${encodeURIComponent(l.labName)}`),
       keywords: `${l.trackName} ${l.language} ${l.assignedTo ?? ''}`
@@ -85,6 +88,9 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
   }, [commands, q]);
 
   useEffect(() => { setIdx(0); }, [q]);
+  useEffect(() => {
+    if (open) dialogRef.current?.querySelector('[data-command-active="true"]')?.scrollIntoView({ block: 'nearest' });
+  }, [idx, open, dialogRef]);
 
   const run = (c: Command) => {
     onClose();
@@ -96,10 +102,9 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
   };
 
   const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setIdx(i => Math.min(i + 1, filtered.length - 1)); }
+    if (e.key === 'ArrowDown') { e.preventDefault(); setIdx(i => Math.min(i + 1, Math.max(0, filtered.length - 1))); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setIdx(i => Math.max(i - 1, 0)); }
     else if (e.key === 'Enter') { e.preventDefault(); const c = filtered[idx]; if (c) run(c); }
-    else if (e.key === 'Escape') { e.preventDefault(); onClose(); }
   };
 
   if (!open) return null;
@@ -110,30 +115,36 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
 
   let running = 0;
   return (
-    <div className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm flex items-start justify-center pt-24 px-4" onClick={onClose}>
+    <div className="modal-backdrop items-start pt-[10dvh]" onClick={onClose}>
       <div
-        className="w-full max-w-xl card overflow-hidden shadow-2xl"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
+        tabIndex={-1}
+        className="popover w-full max-w-xl overflow-hidden rounded-2xl"
         onClick={e => e.stopPropagation()}
         onKeyDown={onKey}
       >
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-          <span className="text-slate-400">🔍</span>
+        <div className="flex items-center gap-3 border-b border-border px-4 py-4">
+          <Search size={17} className="shrink-0 text-subtle" aria-hidden="true" />
           <input
-            ref={inputRef}
-            className="flex-1 bg-transparent outline-none text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+            data-initial-focus
+            aria-label="Search commands and labs"
+            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none"
             placeholder="Jump to a page, run an action, or search labs..."
             value={q}
             onChange={e => setQ(e.target.value)}
           />
-          <kbd className="text-[10px] px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-700 text-slate-500">Esc</kbd>
+          <kbd className="rounded border border-border bg-surface px-1.5 py-0.5 text-[10px] text-subtle">Esc</kbd>
         </div>
-        <div className="max-h-96 overflow-auto py-1">
+        <div className="max-h-[60dvh] overflow-auto p-2 sm:max-h-96">
           {filtered.length === 0 && (
             <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">No matches for "{q}"</div>
           )}
           {Object.entries(groups).map(([section, items]) => (
             <div key={section}>
-              <div className="px-4 pt-2 pb-1 text-[10px] uppercase font-bold tracking-wider text-slate-400">{section}</div>
+              <div className="px-3 pb-1 pt-3 text-[10px] font-medium uppercase tracking-wider text-subtle">{section}</div>
               {items.map(c => {
                 const currentIdx = running++;
                 const active = currentIdx === idx;
@@ -141,27 +152,28 @@ export default function CommandPalette({ open, onClose }: { open: boolean; onClo
                   <button
                     key={c.id}
                     type="button"
-                    className={`w-full text-left flex items-center gap-3 px-4 py-2 text-sm ${
+                    data-command-active={active}
+                    className={`my-0.5 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm ${
                       active
-                        ? 'bg-brand-50 dark:bg-brand-700/25 text-slate-900 dark:text-white'
-                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800'
+                        ? 'bg-primary-soft text-foreground ring-1 ring-primary/30'
+                        : 'text-muted hover:bg-surface hover:text-foreground'
                     }`}
                     onMouseEnter={() => setIdx(currentIdx)}
                     onClick={() => run(c)}
                   >
-                    <span className="text-base w-5 text-center">{c.icon}</span>
-                    <span className="flex-1 truncate">{c.label}</span>
-                    {c.hint && <span className="text-xs text-slate-400 truncate">{c.hint}</span>}
+                    <c.icon size={16} className={`shrink-0 ${active ? 'text-accent' : 'text-subtle'}`} aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate">{c.label}</span>
+                    {c.hint && <span className="hidden max-w-[45%] truncate text-xs text-subtle sm:block">{c.hint}</span>}
                   </button>
                 );
               })}
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-between px-4 py-2 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
+        <div className="flex items-center justify-between border-t border-border bg-surface/50 px-4 py-3 text-[11px] text-muted">
           <div className="flex items-center gap-3">
-            <span><kbd className="px-1 border rounded border-slate-300 dark:border-slate-700">↑↓</kbd> navigate</span>
-            <span><kbd className="px-1 border rounded border-slate-300 dark:border-slate-700">↵</kbd> run</span>
+            <span><kbd className="rounded border border-border px-1">↑↓</kbd> navigate</span>
+            <span><kbd className="rounded border border-border px-1">↵</kbd> run</span>
           </div>
           <div>{filtered.length} results</div>
         </div>

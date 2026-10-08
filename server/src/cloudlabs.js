@@ -6,9 +6,9 @@ class AuthError extends Error {
 }
 
 function getToken() {
-  if (!config.accessToken) {
+  if (!config.accessToken || !config.partnerId) {
     throw new AuthError(
-      'CLOUDLABS_ACCESS_TOKEN is not set. Paste a bearer token into server/.env (see README).'
+      'Workshop sync requires CLOUDLABS_ACCESS_TOKEN and CLOUDLABS_PARTNER_ID on the server.'
     );
   }
   return config.accessToken;
@@ -39,6 +39,8 @@ async function callApi(method, path, body, attempt = 1) {
   try {
     res = await fetch(url, {
       method,
+      redirect: 'error',
+      signal: AbortSignal.timeout(20000),
       headers: {
         'authorization': `Bearer ${token}`,
         'accept': 'application/json',
@@ -65,14 +67,13 @@ async function callApi(method, path, body, attempt = 1) {
       throw new Error(`CloudLabs ${res.status} on ${path} after ${attempt} attempts`);
     }
     const retryAfter = parseInt(res.headers.get('retry-after') || '0', 10) * 1000;
-    const backoff = retryAfter || (500 * 2 ** attempt);
+    const backoff = Math.min(30000, retryAfter || (500 * 2 ** attempt));
     logger.warn('cloudlabs.retryable_error', { path, status: res.status, attempt, backoff });
     await sleep(backoff);
     return callApi(method, path, body, attempt + 1);
   }
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`CloudLabs ${res.status} on ${path}: ${text.slice(0, 300)}`);
+    throw new Error(`CloudLabs returned HTTP ${res.status} for the requested operation.`);
   }
   const json = await res.json();
   logger.debug('cloudlabs.call', { path, status: res.status, durationMs });
